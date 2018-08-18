@@ -158,7 +158,7 @@ def train(annotation_path, classes_path, anchors_path, weights_path, log_dir):
     np.random.shuffle(annotations)
     num_val = int(len(annotations) * val_split)
     num_train = len(annotations) - num_val
-    batch_size = 32
+    batch_size = 8
 
     # first just train the three output layer
     if True:
