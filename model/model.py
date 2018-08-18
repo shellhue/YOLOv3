@@ -346,7 +346,7 @@ def loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False):
         losses += xy_loss + wh_loss + class_loss + confidence_loss
 
         if print_loss:
-            losses = tf.Print(losses, [xy_loss, wh_loss, class_loss, confidence_loss, K.sum(ignore_mask)], message='print loss: ')
+            losses = tf.Print(losses)
 
     return losses
 
@@ -384,7 +384,7 @@ def training_model(input_shape, anchors, num_classes, weights_path, freeze_body=
                         arguments={
                             'anchors': anchors,
                             'ignore_thresh': 0.5,
-                            'print_loss': False,
+                            'print_loss': True,
                             'num_classes': num_classes
                         })([*model.output, *y_trues])
 
