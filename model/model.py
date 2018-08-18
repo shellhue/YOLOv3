@@ -339,11 +339,11 @@ def loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False):
         class_loss = true_mask * K.binary_crossentropy(box_classes, y_true[..., 5:], from_logits=True)
         confidence_loss = true_mask * K.binary_crossentropy(box_confidence, y_true[..., 4:5], from_logits=True) + \
                           (1 - true_mask) * K.binary_crossentropy(box_confidence, y_true[..., 4:5], from_logits=True) * ignore_mask
-
-        losses += K.sum(xy_loss) / mf + \
-                K.sum(wh_loss) / mf + \
-                K.sum(class_loss) / mf + \
-                K.sum(confidence_loss) / mf
+        xy_loss = K.sum(xy_loss) / mf
+        wh_loss = K.sum(wh_loss) / mf
+        class_loss = K.sum(class_loss) / mf
+        confidence_loss = K.sum(confidence_loss) / mf
+        losses += xy_loss + wh_loss + class_loss + confidence_loss
 
         if print_loss:
             losses = tf.Print(losses, [losses, xy_loss, wh_loss, class_loss, confidence_loss, K.sum(ignore_mask)], message='loss: ')
