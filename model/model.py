@@ -362,7 +362,7 @@ def training_model(input_shape, anchors, num_classes, weights_path, freeze_body=
     return: The Model for training
     """
     image_input = Input(shape=[None, None, 3])
-    base_model = base_model(image_input)
+    model = base_model(image_input)
     w, h = input_shape
     scales = {0: 32, 1: 16, 2: 8}
     scales_count = len(anchors) // 3
@@ -370,11 +370,11 @@ def training_model(input_shape, anchors, num_classes, weights_path, freeze_body=
                for s in range(0, scales_count)]
 
     if load_pretrained:
-        base_model.load_weights(weights_path, by_name=True, skip_mismatch=True)
+        model.load_weights(weights_path, by_name=True, skip_mismatch=True)
         if freeze_body in [1, 2]:
-            num = [185, len(base_model.layers) - 3][freeze_body - 1]
+            num = [185, len(model.layers) - 3][freeze_body - 1]
             for i in range(0, num):
-                base_model.layers[i].trainable = False
+                model.layers[i].trainable = False
 
     loss_layer = Lambda(loss,
                         name='yolo_loss',
@@ -383,9 +383,9 @@ def training_model(input_shape, anchors, num_classes, weights_path, freeze_body=
                             'anchors': anchors,
                             'ignore_thresh': 0.5,
                             'print_loss': True
-                        })([*base_model.output, *y_trues])
+                        })([*model.output, *y_trues])
 
-    return Model([base_model.input, *y_trues], loss_layer)
+    return Model([model.input, *y_trues], loss_layer)
 
 
 def get_detected_boxes(predicts, image_shape, anchors, num_classes,
