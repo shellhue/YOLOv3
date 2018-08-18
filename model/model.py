@@ -384,7 +384,7 @@ def training_model(input_shape, anchors, num_classes, weights_path, freeze_body=
                         arguments={
                             'anchors': anchors,
                             'ignore_thresh': 0.5,
-                            'print_loss': True,
+                            'print_loss': False,
                             'num_classes': num_classes
                         })([*model.output, *y_trues])
 
