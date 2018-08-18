@@ -279,10 +279,11 @@ def box_iou(pred, y_true):
     return iou
 
 
-def loss(inputs, anchors, ignore_thresh=0.5, print_loss=False):
+def loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False):
     """ Compute yolo loss
     inputs: list of tensor, [y1, y2, y3, y_true1, y_true2, y_true3], shape=(b, h, w, num_anchors, 5 + num_classes)
     anchors: array, shape=(N, 2), each anchor value is wh
+    num_classes: integer
     ignore_thresh: float, the ignore thresh
     print_loss: bool, whether should print loss
 
@@ -309,7 +310,8 @@ def loss(inputs, anchors, ignore_thresh=0.5, print_loss=False):
         true_mask = y_true[..., 4:5]
         true_mask_bool = K.cast(true_mask, dtype='bool')
         box_xy, box_wh, box_confidence, box_classes, \
-        raw_box_xy, raw_box_wh, grid = preprocess_pred(predicts[s], input_shape, anchors[anchor_masks[s]])
+            raw_box_xy, raw_box_wh, grid = preprocess_pred(predicts[s], input_shape,
+                                                           anchors[anchor_masks[s]], num_classes)
 
         loss_scale = 2 - y_true[..., 2:3] * y_true[..., 3:4]
 
@@ -382,7 +384,8 @@ def training_model(input_shape, anchors, num_classes, weights_path, freeze_body=
                         arguments={
                             'anchors': anchors,
                             'ignore_thresh': 0.5,
-                            'print_loss': True
+                            'print_loss': True,
+                            'num_classes': num_classes
                         })([*model.output, *y_trues])
 
     return Model([model.input, *y_trues], loss_layer)
