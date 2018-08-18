@@ -346,7 +346,7 @@ def loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False):
         losses += xy_loss + wh_loss + class_loss + confidence_loss
 
         if print_loss:
-            losses = tf.Print(losses, [losses, xy_loss, wh_loss, class_loss, confidence_loss, K.sum(ignore_mask)], message='loss: ')
+            losses = tf.Print(losses, [losses, xy_loss, wh_loss, class_loss, confidence_loss, K.sum(ignore_mask)], message='print loss: ')
 
     return losses
 
