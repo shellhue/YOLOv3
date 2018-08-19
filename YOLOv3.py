@@ -15,7 +15,7 @@ from model.dataset import get_classes, get_anchors, data_generator
 
 
 parser = argparse.ArgumentParser(description='Darknet To Keras Converter.')
-parser.add_argument('use_retrained_model', help='Whether should use retrained model weights')
+parser.add_argument('use_retrained_weights', help='Whether should use retrained model weights')
 parser.add_argument('annotations_path', help='Path to annotations.')
 
 
