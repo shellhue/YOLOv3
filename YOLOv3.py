@@ -11,6 +11,8 @@ from model.model import get_detected_boxes, base_model
 from model.dataset import get_anchors, get_classes
 from model.utils import resize_image
 
+import tensorflow as tf
+
 
 class YOLOv3(object):
     def __init__(self,
@@ -114,3 +116,12 @@ class YOLOv3(object):
 
     def close_session(self):
         self.sess.close()
+
+
+tensor = tf.constant([100, 22])
+tensorb = tensor * 2
+
+tensor = tf.Print(tensor, [tensor, tensorb, tf.constant(100)], message='tensor print test: ')
+
+with tf.Session() as sess:
+    print(sess.run([tensor, tensor]))

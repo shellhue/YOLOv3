@@ -345,8 +345,8 @@ def loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False):
         confidence_loss = K.sum(confidence_loss) / mf
         losses += xy_loss + wh_loss + class_loss + confidence_loss
 
-        if print_loss:
-            losses = tf.Print(losses, [losses])
+    if print_loss:
+        losses = tf.Print(losses, [losses])
 
     return losses
 
