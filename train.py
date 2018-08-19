@@ -6,7 +6,7 @@ def _main():
     classes_path = './model_data/coco_classes.txt'
     anchors_path = './model_data/yolo_anchors.txt'
     weights_path = './model_data/yolo.h5'
-    log_dir = './model_data/log'
+    log_dir = './model_data/log/'
 
     train(annotation_path, classes_path, anchors_path, weights_path, log_dir)
 
