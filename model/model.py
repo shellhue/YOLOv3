@@ -304,6 +304,10 @@ def loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False):
     anchors = np.array(anchors, dtype=float_type)
 
     losses = 0
+    xy_losses = 0
+    wh_losses = 0
+    class_losses = 0
+    confidence_losses = 0
 
     for s in range(num_scales):
         y_true = K.cast(labels[s], dtype=float_type)
@@ -343,10 +347,15 @@ def loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False):
         wh_loss = K.sum(wh_loss) / mf
         class_loss = K.sum(class_loss) / mf
         confidence_loss = K.sum(confidence_loss) / mf
+        xy_losses += xy_loss
+        wh_losses += wh_loss
+        class_losses += class_loss
+        confidence_losses += confidence_loss
+
         losses += xy_loss + wh_loss + class_loss + confidence_loss
 
     if print_loss:
-        losses = tf.Print(losses, [losses])
+        losses = tf.Print(losses, [xy_losses, wh_losses, class_losses, confidence_losses], message='yolo loss: ')
 
     return losses
 
