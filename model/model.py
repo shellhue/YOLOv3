@@ -10,11 +10,8 @@ from keras.layers import Lambda
 from keras.layers import Add
 from keras.layers.advanced_activations import LeakyReLU
 from keras.regularizers import l2
-from keras.optimizers import Adam
-from keras.callbacks import TensorBoard, ModelCheckpoint, ReduceLROnPlateau, EarlyStopping
 
 from model.utils import squeeze
-from model.dataset import get_classes, get_anchors, data_generator
 
 
 def DarknetConv2D(*args, **kwargs):
@@ -122,81 +119,6 @@ def base_model(image_input):
     x, y3 = predict(feature3, 128, x, up_sampling=True)
 
     return Model(image_input, [y1, y2, y3])
-
-
-def train(annotation_path, classes_path, anchors_path, weights_path, log_dir):
-    """Train YOLOv3 model
-
-    annotation_path: string
-    classes_path: string
-    anchors_path: string
-    weights_path: string
-    log_dir: string
-    """
-    input_shape = (416, 416)
-    class_names = get_classes(classes_path)
-    anchors = get_anchors(anchors_path)
-    num_classes = len(class_names)
-    model = training_model(input_shape, anchors,
-                           num_classes=len(class_names),
-                           weights_path=weights_path,
-                           freeze_body=2)
-
-    logging = TensorBoard(log_dir)
-    checkpoint = ModelCheckpoint(log_dir + 'ep{epoch:03d}-loss{loss:.3f}-val_loss{val_loss:.3f}.h5',
-                                 monitor='val_loss',
-                                 save_weights_only=True,
-                                 save_best_only=True,
-                                 period=3)
-    reduce_lr = ReduceLROnPlateau('val_loss', factor=0.1, patience=3, verbose=1)
-    early_stopping = EarlyStopping('val_loss', min_delta=0, patience=10, verbose=1)
-
-    val_split = 0.1
-    with open(annotation_path) as f:
-        annotations = f.readlines()
-    np.random.seed(4)
-    np.random.shuffle(annotations)
-    num_val = int(len(annotations) // 1000 * val_split)
-    num_train = len(annotations) // 1000 - num_val
-    batch_size = 8
-
-    # first just train the three output layer
-    if True:
-        model.compile(
-            Adam(lr=1e-3),
-            loss={
-                'yolo_loss': lambda label, pred: pred
-            })
-        model.fit_generator(
-            data_generator(annotations[:num_train], input_shape, batch_size, anchors, num_classes),
-            steps_per_epoch=max(1, num_train // batch_size),
-            epochs=50,
-            validation_data=data_generator(annotations[num_train:], input_shape, batch_size, anchors, num_classes),
-            validation_steps=max(1, num_val // batch_size),
-            initial_epoch=0,
-            callbacks=[logging, checkpoint]
-        )
-        model.save_weights(log_dir + 'trained_weights_stage_1.h5')
-
-    # fine tuning all layers
-    if True:
-        for l in range(len(model.layers)):
-            model.layers[l].trainable = True
-        model.compile(
-            Adam(lr=1e-4),
-            loss={
-                'yolo_loss': lambda label, pred: pred
-            })
-        model.fit_generator(
-            data_generator(annotations[:num_train], input_shape, batch_size, anchors, num_classes),
-            steps_per_epoch=max(1, num_train // batch_size),
-            epochs=100,
-            validation_data=data_generator(annotations[num_train:], input_shape, batch_size, anchors, num_classes),
-            validation_steps=max(1, num_val // batch_size),
-            initial_epoch=50,
-            callbacks=[logging, checkpoint, reduce_lr, early_stopping]
-        )
-        model.save_weights(log_dir + 'trained_weights_stage_final.h5')
 
 
 def preprocess_pred(pred, input_shape, anchors, num_classes):
