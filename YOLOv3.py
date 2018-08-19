@@ -17,6 +17,7 @@ from model.dataset import get_classes, get_anchors, data_generator
 parser = argparse.ArgumentParser(description='Darknet To Keras Converter.')
 parser.add_argument('--use_retrained_weights', help='Whether should use retrained model weights')
 parser.add_argument('--annotations_path', help='Path to annotations.')
+parser.add_argument('--use_focal_loss', help='Whether use focal loss.')
 
 
 class YOLOv3(object):
@@ -73,7 +74,7 @@ class YOLOv3(object):
         np.random.shuffle(self.colors)
         np.random.seed(None)
 
-    def train(self):
+    def train(self, use_focal_loss=False):
         input_shape = (416, 416)
         class_names = get_classes(self.classes_path)
         anchors = get_anchors(self.anchors_path)
@@ -81,7 +82,8 @@ class YOLOv3(object):
         model = training_model(input_shape, anchors,
                                num_classes=len(class_names),
                                weights_path=self.pretrained_weights_path,
-                               freeze_body=2)
+                               freeze_body=2,
+                               use_focal_loss=use_focal_loss)
 
         logging = TensorBoard(self.log_dir)
         checkpoint = ModelCheckpoint(self.log_dir + 'ep{epoch:03d}-loss{loss:.3f}-val_loss{val_loss:.3f}.h5',
@@ -195,8 +197,9 @@ class YOLOv3(object):
 
 def _main(args):
     yolo = YOLOv3(annotations_path=str(args.annotations_path), use_retrained_weights=bool(args.use_retrained_weights))
-    yolo.train()
+    yolo.train(use_focal_loss=bool(args.use_focal_loss))
 
 
 if __name__ == '__main__':
+
     _main(parser.parse_args())

@@ -12,7 +12,7 @@ from keras.layers.advanced_activations import LeakyReLU
 from keras.regularizers import l2
 
 from model.utils import squeeze
-
+import model.utils as utils
 
 def DarknetConv2D(*args, **kwargs):
     """darknet conv2D using l2 regularizer and the corresponding padding"""
@@ -344,8 +344,7 @@ def focal_loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False
         xy_loss = true_mask * loss_scale * K.binary_crossentropy(raw_box_xy, raw_true_xy, from_logits=True)
         wh_loss = true_mask * loss_scale * 0.5 * K.square(raw_box_wh - raw_true_wh)
         class_loss = true_mask * K.binary_crossentropy(box_classes, y_true[..., 5:], from_logits=True)
-        confidence_loss = true_mask * K.binary_crossentropy(box_confidence, y_true[..., 4:5], from_logits=True) + \
-                          (1 - true_mask) * K.binary_crossentropy(box_confidence, y_true[..., 4:5], from_logits=True) * ignore_mask
+        confidence_loss = utils.focal_loss(box_confidence, y_true[..., 4:5], gama=2.0)
         xy_loss = K.sum(xy_loss) / mf
         wh_loss = K.sum(wh_loss) / mf
         class_loss = K.sum(class_loss) / mf
@@ -363,7 +362,8 @@ def focal_loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False
     return losses
 
 
-def training_model(input_shape, anchors, num_classes, weights_path, freeze_body=2, load_pretrained=False):
+def training_model(input_shape, anchors, num_classes, weights_path,
+                   freeze_body=2, load_pretrained=False, use_focal_loss=False):
     """Create model for training
 
     input_shape: tuple of int, (W, H)
@@ -372,6 +372,7 @@ def training_model(input_shape, anchors, num_classes, weights_path, freeze_body=
     weights_path: string
     freeze_body: int, 1 or 2, when 1, freezing the darknet part, when 2, freezing all layers except the 3 output layer
     load_pretrained: boolean
+    use_focal_loss: boolean
 
     return: The Model for training
     """
@@ -390,7 +391,7 @@ def training_model(input_shape, anchors, num_classes, weights_path, freeze_body=
             for i in range(0, num):
                 model.layers[i].trainable = False
 
-    loss_layer = Lambda(loss,
+    loss_layer = Lambda(focal_loss if use_focal_loss else loss,
                         name='yolo_loss',
                         output_shape=(1,),
                         arguments={
