@@ -174,7 +174,7 @@ def train(annotation_path, classes_path, anchors_path, weights_path, log_dir):
             validation_data=data_generator(annotations[num_train:], input_shape, batch_size, anchors, num_classes),
             validation_steps=max(1, num_val // batch_size),
             initial_epoch=0,
-            callbacks=[logging, checkpoint]
+            # callbacks=[logging, checkpoint]
         )
         model.save_weights(log_dir + 'trained_weights_stage_1.h5')
 
@@ -194,7 +194,7 @@ def train(annotation_path, classes_path, anchors_path, weights_path, log_dir):
             validation_data=data_generator(annotations[num_train:], input_shape, batch_size, anchors, num_classes),
             validation_steps=max(1, num_val // batch_size),
             initial_epoch=50,
-            callbacks=[logging, checkpoint, reduce_lr, early_stopping]
+            # callbacks=[logging, checkpoint, reduce_lr, early_stopping]
         )
         model.save_weights(log_dir + 'trained_weights_stage_final.h5')
 
