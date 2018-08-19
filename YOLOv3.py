@@ -15,8 +15,8 @@ from model.dataset import get_classes, get_anchors, data_generator
 
 
 parser = argparse.ArgumentParser(description='Darknet To Keras Converter.')
-parser.add_argument('use_retrained_weights', help='Whether should use retrained model weights')
-parser.add_argument('annotations_path', help='Path to annotations.')
+parser.add_argument('--use_retrained_weights', help='Whether should use retrained model weights')
+parser.add_argument('--annotations_path', help='Path to annotations.')
 
 
 class YOLOv3(object):
@@ -194,10 +194,9 @@ class YOLOv3(object):
 
 
 def _main(args):
-    yolo = YOLOv3(annotations_path=args.annotations_path, use_retrained_weights=args.use_retrained_weights)
+    yolo = YOLOv3(annotations_path=str(args.annotations_path), use_retrained_weights=bool(args.use_retrained_weights))
     yolo.train()
 
 
 if __name__ == '__main__':
-
     _main(parser.parse_args())
