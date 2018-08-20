@@ -54,21 +54,19 @@ def rand(a=0, b=1):
     return np.random.rand() * (b - a) + a
 
 
-def focal_loss(y, y_true, gama):
+def focal_loss(_sentinel=None, y=None, y_true=None, gama=0.0):
     """ Calculate focal loss, element wise focal loss
 
+    param _sentinel: Used to prevent positional parameters. Internal, do not use.
     param y: tensor, the predict, value should be in (0, 1), shape=(N1, N2, ..., 1)
     param y_true: tensor, ground truth, value should be 0 or 1, has the same shape with y
     param gama: float, focal factor
     return: tensor, focal loss, has the same shape with y and y_true
     """
     y_true = K.cast(y_true, dtype=K.dtype(y))
-    mask = y_true > 0
-    mask = K.cast(mask, dtype=K.dtype(y))
-    negative = 1.0 - y
-    positive = y
-    loss = (1.0 - mask) * K.pow(1.0 - negative, gama) * K.log(negative) + \
-        mask * K.log(positive) * K.pow(1.0 - positive, gama)
+    clipped_y = K.clip(y, K.epsilon(), 1 - K.epsilon())
+    loss = y_true * K.pow(1.0 - clipped_y, gama) * K.log(clipped_y) + \
+           (1.0 - y_true) * K.pow(clipped_y, gama) * K.log(1 - clipped_y)
 
     return -loss
 

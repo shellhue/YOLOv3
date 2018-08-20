@@ -260,11 +260,11 @@ def loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False):
         _, ignore_mask = K.control_flow_ops.while_loop(lambda b, *args: b < m, loop_body, [0, ignore_mask])
         ignore_mask = ignore_mask.stack()
 
-        xy_loss = true_mask * loss_scale * K.binary_crossentropy(raw_box_xy, raw_true_xy, from_logits=True)
+        xy_loss = true_mask * loss_scale * K.binary_crossentropy(raw_true_xy, raw_box_xy, from_logits=False)
         wh_loss = true_mask * loss_scale * 0.5 * K.square(raw_box_wh - raw_true_wh)
-        class_loss = true_mask * K.binary_crossentropy(box_classes, y_true[..., 5:], from_logits=True)
-        confidence_loss = true_mask * K.binary_crossentropy(box_confidence, y_true[..., 4:5], from_logits=True) + \
-                          (1 - true_mask) * K.binary_crossentropy(box_confidence, y_true[..., 4:5], from_logits=True) * ignore_mask
+        class_loss = true_mask * K.binary_crossentropy(y_true[..., 5:], box_classes, from_logits=False)
+        confidence_loss = true_mask * K.binary_crossentropy(y_true[..., 4:5], box_confidence, from_logits=False) + \
+                          (1 - true_mask) * K.binary_crossentropy(y_true[..., 4:5], box_confidence, from_logits=False) * ignore_mask
         xy_loss = K.sum(xy_loss) / mf
         wh_loss = K.sum(wh_loss) / mf
         class_loss = K.sum(class_loss) / mf
@@ -341,9 +341,9 @@ def focal_loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False
         _, ignore_mask = K.control_flow_ops.while_loop(lambda b, *args: b < m, loop_body, [0, ignore_mask])
         ignore_mask = ignore_mask.stack()
 
-        xy_loss = true_mask * loss_scale * K.binary_crossentropy(raw_box_xy, raw_true_xy, from_logits=True)
+        xy_loss = true_mask * loss_scale * K.binary_crossentropy(raw_true_xy, raw_box_xy, from_logits=False)
         wh_loss = true_mask * loss_scale * 0.5 * K.square(raw_box_wh - raw_true_wh)
-        class_loss = true_mask * K.binary_crossentropy(box_classes, y_true[..., 5:], from_logits=True)
+        class_loss = true_mask * K.binary_crossentropy(y_true[..., 5:], box_classes, from_logits=False)
         confidence_loss = utils.focal_loss(box_confidence, y_true[..., 4:5], gama=2) * true_mask + \
             utils.focal_loss(box_confidence, y_true[..., 4:5], gama=2) * (1 - true_mask) * ignore_mask
         xy_loss = K.sum(xy_loss) / mf
