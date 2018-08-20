@@ -54,7 +54,7 @@ def rand(a=0, b=1):
     return np.random.rand() * (b - a) + a
 
 
-def focal_loss(_sentinel=None, y=None, y_true=None, gama=0.0):
+def sigmoid_focal_loss(_sentinel=None, y=None, y_true=None, gama=0.0):
     """ Calculate focal loss, element wise focal loss
 
     param _sentinel: Used to prevent positional parameters. Internal, do not use.
@@ -66,7 +66,7 @@ def focal_loss(_sentinel=None, y=None, y_true=None, gama=0.0):
     y_true = K.cast(y_true, dtype=K.dtype(y))
     clipped_y = K.clip(y, K.epsilon(), 1 - K.epsilon())
     loss = y_true * K.pow(1.0 - clipped_y, gama) * K.log(clipped_y) + \
-           (1.0 - y_true) * K.pow(clipped_y, gama) * K.log(1 - clipped_y)
+        (1.0 - y_true) * K.pow(clipped_y, gama) * K.log(1 - clipped_y)
 
     return -loss
 
