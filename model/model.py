@@ -356,8 +356,8 @@ def focal_loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False
         confidence_loss = K.sum(confidence_loss) / mf
         xy_losses += xy_loss
         wh_losses += wh_loss
-        raw_box_xy_sum += K.sum(raw_box_xy) / mf
-        raw_true_xy_sum += K.sum(raw_true_xy) / mf
+        raw_box_xy_sum += true_mask * K.sum(raw_box_xy) / mf
+        raw_true_xy_sum += true_mask * K.sum(raw_true_xy) / mf
         class_losses += class_loss
         confidence_losses += confidence_loss
 
