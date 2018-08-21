@@ -212,17 +212,16 @@ def print_y_true(y_true, name):
                         print(i, j, y_true[i][j][k][m][0:4])
 
 
-# from model.dataset import data_generator
 if __name__ == '__main__':
-    _main(parser.parse_args())
-    # num_classes = 10
-    # input_shape = (416, 416)
-    # batch_size = 2
-    # anchors = [10, 13, 16, 30, 33, 23, 30, 61, 62, 45, 59, 119, 116, 90, 156, 198, 373, 326]
-    # anchors = np.array(anchors).reshape(-1, 2)
-    #
-    # annotations = ['./6.jpg 20,30,40,50,7 10,30,50,80,8', './7.jpg 20,30,40,50,7 10,30,50,80,8']
-    #
-    # generator = data_generator(annotations, input_shape, batch_size, anchors, num_classes)
-    # input, _ = next(generator)
-    # image_data, y_true1, y_true2, y_true3 = input
+    pass
+    # _main(parser.parse_args())
+
+
+import tensorflow as tf
+
+y = tf.constant(0.6)
+y_true = tf.constant(0.6)
+
+loss = K.binary_crossentropy(y_true, y, from_logits=False)
+with tf.Session() as sess:
+    print(sess.run(loss))

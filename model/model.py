@@ -275,7 +275,7 @@ def loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False):
         class_losses += class_loss
         confidence_losses += confidence_loss
 
-        losses += xy_loss + wh_loss + class_loss + confidence_loss
+        losses += (xy_loss + wh_loss + class_loss + confidence_loss)
 
     if print_loss:
         losses = tf.Print(losses, [losses, xy_losses, wh_losses, class_losses, confidence_losses], message=' yolo loss: ')
@@ -310,6 +310,8 @@ def focal_loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False
     losses = 0
     xy_losses = 0
     wh_losses = 0
+    raw_box_xy_sum = 0
+    raw_true_xy_sum = 0
     class_losses = 0
     confidence_losses = 0
 
@@ -322,6 +324,7 @@ def focal_loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False
                                                            anchors[anchor_masks[s]], num_classes)
 
         loss_scale = 2 - y_true[..., 2:3] * y_true[..., 3:4]
+        loss_scale = K.clip(loss_scale, K.constant(0, dtype=float_type), K.constant(2, dtype=float_type))
 
         raw_true_xy = y_true[..., :2] - grid[..., ::-1]
         raw_true_wh = K.log(y_true[..., 2:4] * input_shape / anchors[anchor_masks[s]])
@@ -353,13 +356,15 @@ def focal_loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False
         confidence_loss = K.sum(confidence_loss) / mf
         xy_losses += xy_loss
         wh_losses += wh_loss
+        raw_box_xy_sum += K.sum(raw_box_xy) / mf
+        raw_true_xy_sum += K.sum(raw_true_xy) / mf
         class_losses += class_loss
         confidence_losses += confidence_loss
 
         losses += xy_loss + wh_loss + class_loss + confidence_loss
 
     if print_loss:
-        losses = tf.Print(losses, [losses, xy_losses, wh_losses, class_losses, confidence_losses], message=' yolo loss: ')
+        losses = tf.Print(losses, [raw_box_xy_sum, raw_true_xy_sum, losses, xy_losses, wh_losses, class_losses, confidence_losses], message=' yolo loss: ')
 
     return losses
 
