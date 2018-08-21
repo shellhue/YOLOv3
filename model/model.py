@@ -351,7 +351,7 @@ def focal_loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False
 
         xy_loss = true_mask * loss_scale * K.binary_crossentropy(raw_true_xy, raw_box_xy, from_logits=False)
         wh_loss = true_mask * loss_scale * 0.5 * K.square(raw_box_wh - raw_true_wh)
-        class_loss = true_mask * K.binary_crossentropy(y_true[..., 5:], box_classes, from_logits=False)
+        class_loss = true_mask * utils.sigmoid_focal_loss(y_true=y_true[..., 5:], y=box_classes, gama=2.0)
         confidence_loss = utils.sigmoid_focal_loss(y=box_confidence, y_true=y_true[..., 4:5], gama=2.0) * true_mask + \
                           utils.sigmoid_focal_loss(y=box_confidence, y_true=y_true[..., 4:5], gama=2.0) * (1 - true_mask) * ignore_mask
         xy_loss = K.sum(xy_loss) / mf
