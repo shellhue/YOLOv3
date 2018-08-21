@@ -324,7 +324,7 @@ def focal_loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False
                                                            anchors[anchor_masks[s]], num_classes)
 
         loss_scale = 2 - y_true[..., 2:3] * y_true[..., 3:4]
-        loss_scale = K.clip(loss_scale, K.constant(0, dtype=float_type), K.constant(2, dtype=float_type))
+        loss_scale = K.clip(loss_scale, 0.0, 2.0)
 
         raw_true_xy = y_true[..., :2] - grid[..., ::-1]
         raw_true_wh = K.log(y_true[..., 2:4] * input_shape / anchors[anchor_masks[s]])
