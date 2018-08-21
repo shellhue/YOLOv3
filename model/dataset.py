@@ -18,7 +18,6 @@ def true_boxes_to_labels(true_boxes, input_shape, anchors, num_classes):
         output of the corresponding scale, each y_true has shape=[m, H, W, num_anchors, num_classes + 5]
     """
     true_boxes = np.array(true_boxes, dtype='float32')
-    print('true_boxes', true_boxes)
     input_shape = np.array(input_shape, dtype='int32')
     anchors = np.array(anchors, dtype='float32').reshape(-1, 2)
     H, W = input_shape
