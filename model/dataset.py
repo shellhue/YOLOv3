@@ -18,6 +18,7 @@ def true_boxes_to_labels(true_boxes, input_shape, anchors, num_classes):
         output of the corresponding scale, each y_true has shape=[m, H, W, num_anchors, num_classes + 5]
     """
     true_boxes = np.array(true_boxes, dtype='float32')
+    print('true_boxes', true_boxes)
     input_shape = np.array(input_shape, dtype='int32')
     anchors = np.array(anchors, dtype='float32').reshape(-1, 2)
     H, W = input_shape
@@ -229,7 +230,7 @@ def data_generator(annotations, input_shape, batch_size, anchors, num_classes):
             if i == 0:
                 np.random.shuffle(annotations)
             annotation = annotations[i]
-            image_data, box_data = get_augmented_data(annotation, input_shape)
+            image_data, box_data = get_augmented_data(annotation, input_shape, random=False)
             image_datas.append(image_data)
             boxes.append(box_data)
             i = (i + 1) % n
@@ -239,21 +240,3 @@ def data_generator(annotations, input_shape, batch_size, anchors, num_classes):
         y_trues = true_boxes_to_labels(boxes, input_shape, anchors, num_classes)
         yield [image_datas, *y_trues], np.zeros(batch_size)
 
-
-# if __name__ == '__main__':
-#     num_classes = 10
-#     input_shape = (416, 416)
-#     batch_size = 2
-#     anchors = [10, 13, 16, 30, 33, 23, 30, 61, 62, 45, 59, 119, 116, 90, 156, 198, 373, 326]
-#     anchors = np.array(anchors).reshape(-1, 2)
-#
-#     annotations = ['./6.jpg 20,30,40,50,7 10,30,50,80,8', './7.jpg 20,30,40,50,7 10,30,50,80,8',
-#                    './6.jpg 20,30,40,50,7 10,30,50,80,8', './7.jpg 20,30,40,50,7 10,30,50,80,8']
-#
-#     generator = data_generator(annotations, input_shape, batch_size, anchors, num_classes)
-#     input, _ = next(generator)
-#     print(input[0][1, 1, 34, :])
-#     for i in input:
-#
-#         print(i.shape)
-    # print(a)
