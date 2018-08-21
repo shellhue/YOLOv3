@@ -200,49 +200,6 @@ def _main(args):
     yolo.train(use_focal_loss=bool(args.use_focal_loss))
 
 
-def print_y_true(y_true, name):
-    print(name)
-    b, h, w, num_anchors, _ = y_true.shape
-    for i in range(b):
-        for j in range(h):
-            for k in range(w):
-                for m in range(num_anchors):
-                    object_confidence = y_true[i][j][k][m][4] > 0
-                    if object_confidence:
-                        box = y_true[i][j][k][m][0:4]
-                        print(i, j, k, m, box)
-
-                        box[0] -= k / w
-                        box[1] -= j / h
-
-                        print(i, j, k, m, box)
-
-
-# from model.dataset import data_generator
 if __name__ == '__main__':
     _main(parser.parse_args())
-    # num_classes = 10
-    # input_shape = (416, 416)
-    # batch_size = 2
-    # anchors = [10, 13, 16, 30, 33, 23, 30, 61, 62, 45, 59, 119, 116, 90, 156, 198, 373, 326]
-    # anchors = np.array(anchors).reshape(-1, 2)
-    #
-    # annotations = ['./6.jpg 20,30,40,50,7 10,30,50,80,8', './7.jpg 20,30,40,50,7 10,30,50,80,8']
-    #
-    # generator = data_generator(annotations, input_shape, batch_size, anchors, num_classes)
-    # input, _ = next(generator)
-    # image_data, y_true1, y_true2, y_true3 = input
-    # print_y_true(y_true1, 'y_true 111111')
-    # print_y_true(y_true2, 'y_true 222222')
-    # print_y_true(y_true3, 'y_true 333333')
 
-
-
-# import tensorflow as tf
-#
-# y = tf.constant(0.6)
-# y_true = tf.constant(0.6)
-#
-# loss = K.binary_crossentropy(y_true, y, from_logits=False)
-# with tf.Session() as sess:
-#     print(sess.run(loss))
