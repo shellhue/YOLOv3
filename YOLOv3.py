@@ -213,15 +213,15 @@ def print_y_true(y_true, name):
 
 
 if __name__ == '__main__':
-    pass
-    # _main(parser.parse_args())
+
+    _main(parser.parse_args())
 
 
-import tensorflow as tf
-
-y = tf.constant(0.6)
-y_true = tf.constant(0.6)
-
-loss = K.binary_crossentropy(y_true, y, from_logits=False)
-with tf.Session() as sess:
-    print(sess.run(loss))
+# import tensorflow as tf
+#
+# y = tf.constant(0.6)
+# y_true = tf.constant(0.6)
+#
+# loss = K.binary_crossentropy(y_true, y, from_logits=False)
+# with tf.Session() as sess:
+#     print(sess.run(loss))
