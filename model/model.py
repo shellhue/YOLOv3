@@ -322,7 +322,7 @@ def focal_loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False
         box_xy, box_wh, box_confidence, box_classes, \
             raw_box_xy, raw_box_wh, grid = preprocess_pred(predicts[s], input_shape,
                                                            anchors[anchor_masks[s]], num_classes)
-        grid_shape = K.shape(grid)
+        grid_shape = K.shape(grid)[:2]
         grid_shape = K.cast(grid_shape, dtype=float_type)
 
         loss_scale = 2 - y_true[..., 2:3] * y_true[..., 3:4]
