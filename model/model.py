@@ -263,8 +263,11 @@ def loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False):
         _, ignore_mask = K.control_flow_ops.while_loop(lambda b, *args: b < m, loop_body, [0, ignore_mask])
         ignore_mask = ignore_mask.stack()
 
-        xy_loss = true_mask * loss_scale * K.binary_crossentropy(raw_true_xy, raw_box_xy, from_logits=False)
-        wh_loss = true_mask * loss_scale * 0.5 * K.square(raw_box_wh - raw_true_wh)
+        xy_loss = true_mask * loss_scale * K.square(raw_true_xy - raw_box_xy)
+        clipped_raw_box_wh = K.clip(raw_box_wh, K.epsilon(), 100)
+        clipped_raw_true_wh = K.clip(raw_true_wh, K.epsilon(), 100)
+        wh_loss = true_mask * loss_scale * 0.5 * K.square(K.sqrt(clipped_raw_box_wh) - K.sqrt(clipped_raw_true_wh))
+
         class_loss = true_mask * K.binary_crossentropy(y_true[..., 5:], box_classes, from_logits=False)
         confidence_loss = true_mask * K.binary_crossentropy(y_true[..., 4:5], box_confidence, from_logits=False) + \
                           (1 - true_mask) * K.binary_crossentropy(y_true[..., 4:5], box_confidence, from_logits=False) * ignore_mask
@@ -349,8 +352,10 @@ def focal_loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False
         _, ignore_mask = K.control_flow_ops.while_loop(lambda b, *args: b < m, loop_body, [0, ignore_mask])
         ignore_mask = ignore_mask.stack()
 
-        xy_loss = true_mask * loss_scale * K.binary_crossentropy(raw_true_xy, raw_box_xy, from_logits=False)
-        wh_loss = true_mask * loss_scale * 0.5 * K.square(raw_box_wh - raw_true_wh)
+        xy_loss = true_mask * loss_scale * K.square(raw_true_xy - raw_box_xy)
+        clipped_raw_box_wh = K.clip(raw_box_wh, K.epsilon(), 100)
+        clipped_raw_true_wh = K.clip(raw_true_wh, K.epsilon(), 100)
+        wh_loss = true_mask * loss_scale * 0.5 * K.square(K.sqrt(clipped_raw_box_wh) - K.sqrt(clipped_raw_true_wh))
         class_loss = true_mask * utils.sigmoid_focal_loss(y_true=y_true[..., 5:], y=box_classes, gama=2.0)
         confidence_loss = utils.sigmoid_focal_loss(y=box_confidence, y_true=y_true[..., 4:5], gama=2.0) * true_mask + \
                           utils.sigmoid_focal_loss(y=box_confidence, y_true=y_true[..., 4:5], gama=2.0) * (1 - true_mask) * ignore_mask
