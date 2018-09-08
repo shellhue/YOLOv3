@@ -443,41 +443,53 @@ def get_detected_boxes(predicts, image_shape, anchors, num_classes,
     num_scales = len(predicts)
     input_shape = K.shape(predicts[0])[1:3] * 32
     input_shape = input_shape[::-1]
-    boxes = []
-    scores = []
-    classes = []
+
+    raw_boxes = []
+    raw_scores = []
 
     anchor_mask = [[6, 7, 8], [3, 4, 5], [0, 1, 2]]
 
     for i in range(num_scales):
         box_xy, box_wh, box_confidence, box_class_probs, _, _, _ = post_process_pred(predicts[i], input_shape,
-                                                                                     anchors[anchor_mask[i]], num_classes)
+                                                                                     anchors[anchor_mask[i]],
+                                                                                     num_classes)
 
-        # (1, h, w, num_anchors, 4), x_min, y_min, x_max, y_max, relative to image shape
+        # (1, h, w, num_anchors, 4), x_min, y_min, x_max, y_max, relative to original image(not scaled)
         rescaled_boxes = rescale_pred_box(box_xy, box_wh, input_shape, image_shape)
+
+        # y_min, x_min, y_max, x_max, (1, h, w, num_anchors, 4)
         nms_boxes = K.concatenate([rescaled_boxes[..., 1:2], rescaled_boxes[..., 0:1],
                                    rescaled_boxes[..., 3:4], rescaled_boxes[..., 2:3]], axis=-1)
+        # y_min, x_min, y_max, x_max, (h * w * num_anchors, 4)
         nms_boxes = K.reshape(nms_boxes, shape=(-1, 4))
-        rescaled_boxes = K.reshape(rescaled_boxes, shape=(-1, 4))
+        # (h * w * num_anchors, num_classes)
         box_scores = K.reshape(box_confidence * box_class_probs, shape=(-1, num_classes))
+        raw_boxes.append(nms_boxes)
+        raw_scores.append(box_scores)
+    raw_boxes = K.concatenate(raw_boxes, axis=0)
+    raw_scores = K.concatenate(raw_scores, axis=0)
+    max_boxes_tensor = K.constant(max_boxes, dtype='int32')
+    mask = raw_scores > score_threshold  # (h * w * num_anchors, num_classes)
 
-        max_boxes_tensor = K.constant(max_boxes, dtype='int32')
-        mask = box_scores > score_threshold
-
-        for c in range(num_classes):
-            effective_boxes = tf.boolean_mask(nms_boxes, mask[..., c])
-            masked_rescaled_boxes = tf.boolean_mask(rescaled_boxes, mask[..., c])
-            effective_scores = tf.boolean_mask(box_scores[..., c], mask[..., c])
-            nms_index = tf.image.non_max_suppression(effective_boxes, effective_scores,
-                                                     max_boxes_tensor, iou_threshold=iou_threshold)
-            effective_boxes = K.gather(masked_rescaled_boxes, nms_index)
-            effective_scores = K.gather(effective_scores, nms_index)
-            effective_classes = K.zeros_like(effective_scores, dtype='int32') + c
-            boxes.append(effective_boxes)
-            scores.append(effective_scores)
-            classes.append(effective_classes)
+    boxes = []
+    scores = []
+    classes = []
+    for c in range(num_classes):
+        effective_boxes = tf.boolean_mask(raw_boxes, mask[..., c])
+        effective_scores = tf.boolean_mask(raw_scores[..., c], mask[..., c])
+        nms_index = tf.image.non_max_suppression(effective_boxes, effective_scores,
+                                                 max_boxes_tensor, iou_threshold=iou_threshold)
+        effective_boxes = K.gather(effective_boxes, nms_index)
+        effective_scores = K.gather(effective_scores, nms_index)
+        effective_classes = K.zeros_like(effective_scores, dtype='int32') + c
+        boxes.append(effective_boxes)
+        scores.append(effective_scores)
+        classes.append(effective_classes)
 
     boxes = K.concatenate(boxes, axis=0)
+    # x_min, y_min, x_max, y_max
+    boxes = K.concatenate([boxes[..., 1:2], boxes[..., 0:1],
+                           boxes[..., 3:4], boxes[..., 2:3]], axis=-1)
     scores = K.concatenate(scores, axis=0)
     classes = K.concatenate(classes, axis=0)
 
