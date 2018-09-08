@@ -22,7 +22,7 @@ class YOLOv3(object):
                  classes_path="model_data/coco_classes.txt",
                  log_dir='model_data/log/',
                  score_threshold=0.7,
-                 iou_threshold=0.45,
+                 iou_threshold=0.5,
                  input_shape=(416, 416)):
         assert len(initial_weights_path) > 0, "Initial weights path can not be empty!"
         if is_training:
@@ -147,7 +147,6 @@ class YOLOv3(object):
         image_data = np.array(resized_input_image, dtype='float32')
         image_data /= 255.
         image_data = np.expand_dims(image_data, axis=0)
-        print('input image shape:', image_data.shape)
         boxes, scores, classes = self._sess.run([self._boxes, self._scores, self._classes],
                                                 feed_dict={
                                                    self._model.input: image_data,
