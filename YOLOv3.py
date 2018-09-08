@@ -24,9 +24,9 @@ class YOLOv3(object):
                  score_threshold=0.7,
                  iou_threshold=0.45,
                  input_shape=(416, 416)):
-        assert(initial_weights_path, "Initial weights path can not be empty!")
+        assert len(initial_weights_path) > 0, "Initial weights path can not be empty!"
         if is_training:
-            assert (annotations_path, "Annotations path can not be empty when train!")
+            assert len(annotations_path) > 0, "Annotations path can not be empty when train!"
             self._annotations_path = annotations_path
         self._anchors_path = anchors_path
         self._classes_path = classes_path
@@ -47,10 +47,12 @@ class YOLOv3(object):
         if not self._is_training:
             self._model = base_model(self._image_input)
             # load model weights
+            print('######### start loading weights ##########')
             self._model.load_weights(self._initial_weights_path)
             assert self._model.layers[-1].output_shape[-1] == \
                    len(self._anchors) / len(self._model.outputs) * (len(self._class_names) + 5), \
                 'Mismatch between model and given anchor and class sizes'
+            print('######### finish loading weights ##########')
 
             # get detected boxes
             self._boxes, self._scores, self._classes = get_detected_boxes(self._model.outputs,
@@ -62,12 +64,14 @@ class YOLOv3(object):
                                                                           self._iou_threshold)
 
         # config color for each class box
+        print('######### start config boxing colors ##########')
         hsv_tuples = [(x / len(self._class_names), 1.0, 1.0) for x in range(len(self._class_names))]
         self._colors = list(map(lambda hsv: colorsys.hsv_to_rgb(hsv[0], hsv[1], hsv[2]), hsv_tuples))
         self._colors = list(map(lambda rgb: (int(rgb[0] * 255.), int(rgb[1] * 255.), int(rgb[2] * 255.)), self._colors))
         np.random.seed(23132)
         np.random.shuffle(self._colors)
         np.random.seed(None)
+        print('######### finish config boxing colors ##########')
 
     def train(self, use_focal_loss=False):
         input_shape = (416, 416)
