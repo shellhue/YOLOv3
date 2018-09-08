@@ -121,8 +121,8 @@ def base_model(image_input):
     return Model(image_input, [y1, y2, y3])
 
 
-def preprocess_pred(pred, input_shape, anchors, num_classes):
-    """preprocess yolo model prediction
+def post_process_pred(pred, input_shape, anchors, num_classes):
+    """post process yolo model prediction
 
     process x, y to be the proportion of x, y by W, H
     process w, h to be the proportion of w, h by W, H
@@ -236,8 +236,8 @@ def loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False):
         true_mask = y_true[..., 4:5]
         true_mask_bool = K.cast(true_mask, dtype='bool')
         box_xy, box_wh, box_confidence, box_classes, \
-            raw_box_xy, raw_box_wh, grid = preprocess_pred(predicts[s], input_shape,
-                                                           anchors[anchor_masks[s]], num_classes)
+            raw_box_xy, raw_box_wh, grid = post_process_pred(predicts[s], input_shape,
+                                                             anchors[anchor_masks[s]], num_classes)
         grid_shape = K.shape(grid)[:2]
         grid_shape = K.cast(grid_shape, dtype=float_type)
 
@@ -325,8 +325,8 @@ def focal_loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False
         true_mask = y_true[..., 4:5]
         true_mask_bool = K.cast(true_mask, dtype='bool')
         box_xy, box_wh, box_confidence, box_classes, \
-            raw_box_xy, raw_box_wh, grid = preprocess_pred(predicts[s], input_shape,
-                                                           anchors[anchor_masks[s]], num_classes)
+            raw_box_xy, raw_box_wh, grid = post_process_pred(predicts[s], input_shape,
+                                                             anchors[anchor_masks[s]], num_classes)
         grid_shape = K.shape(grid)[:2]
         grid_shape = K.cast(grid_shape, dtype=float_type)
 
@@ -379,14 +379,16 @@ def focal_loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False
 
 
 def training_model(input_shape, anchors, num_classes, weights_path,
-                   freeze_body=2, load_pretrained=False, use_focal_loss=False):
+                   freeze_body_mode='ALL_BUT_OUTPUTS',
+                   load_pretrained=True, use_focal_loss=False):
     """Create model for training
 
     input_shape: tuple of int, (W, H)
     anchors: array, shape=(N, 2)
     num_classes: integer
     weights_path: string
-    freeze_body: int, 1 or 2, when 1, freezing the darknet part, when 2, freezing all layers except the 3 output layer
+    freeze_body_mode: string, DARKNET or ALL_BUT_OUTPUTS, when DARKNET, freezing the darknet part, \
+        when ALL_BUT_OUTPUTS, freezing all layers except the 3 output layer
     load_pretrained: boolean
     use_focal_loss: boolean
 
@@ -401,11 +403,20 @@ def training_model(input_shape, anchors, num_classes, weights_path,
                for s in range(0, scales_count)]
 
     if load_pretrained:
+        print('Start loading initial weights...')
         model.load_weights(weights_path, by_name=True, skip_mismatch=True)
-        if freeze_body in [1, 2]:
-            num = [185, len(model.layers) - 3][freeze_body - 1]
-            for i in range(0, num):
-                model.layers[i].trainable = False
+        print('Finish loading initial weights')
+        print('{} is freezed'.format(freeze_body_mode))
+        if freeze_body_mode == 'DARKNET':
+            num = 185
+        elif freeze_body_mode == 'ALL_BUT_OUTPUTS':
+            num = len(model.layers) - 3
+        else:
+            num = len(model.layers) - 3
+        for i in range(0, num):
+            model.layers[i].trainable = False
+
+    print('Is using {} loss'.format('focal' if use_focal_loss else 'normal'))
 
     loss_layer = Lambda(focal_loss if use_focal_loss else loss,
                         name='yolo_loss',
@@ -443,8 +454,8 @@ def get_detected_boxes(predicts, image_shape, anchors, num_classes,
     anchor_mask = [[6, 7, 8], [3, 4, 5], [0, 1, 2]]
 
     for i in range(num_scales):
-        box_xy, box_wh, box_confidence, box_class_probs, _, _, _ = preprocess_pred(predicts[i], input_shape,
-                                                                                   anchors[anchor_mask[i]], num_classes)
+        box_xy, box_wh, box_confidence, box_class_probs, _, _, _ = post_process_pred(predicts[i], input_shape,
+                                                                                     anchors[anchor_mask[i]], num_classes)
 
         # (1, h, w, num_anchors, 4), x_min, y_min, x_max, y_max, relative to image shape
         rescaled_boxes = rescale_pred_box(box_xy, box_wh, input_shape, image_shape)

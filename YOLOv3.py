@@ -1,5 +1,4 @@
 import numpy as np
-import argparse
 import colorsys
 from timeit import default_timer as timer
 from PIL import Image, ImageFont, ImageDraw
@@ -14,79 +13,74 @@ from model.utils import resize_image
 from model.dataset import get_classes, get_anchors, data_generator
 
 
-parser = argparse.ArgumentParser(description='Darknet To Keras Converter.')
-parser.add_argument('--use_retrained_weights', help='Whether should use retrained model weights')
-parser.add_argument('--annotations_path', help='Path to annotations.')
-parser.add_argument('--use_focal_loss', help='Whether use focal loss.')
-
-
 class YOLOv3(object):
     def __init__(self,
-                 pretrained_weights_path='model_data/yolo.h5',
-                 retrained_weights_path='model_data/log/trained_weights_stage_final.h5',
+                 initial_weights_path,
+                 is_training,
+                 annotations_path=None,
                  anchors_path="model_data/yolo_anchors.txt",
                  classes_path="model_data/coco_classes.txt",
-                 annotations_path='/home/shellhue/data/train.txt',
                  log_dir='model_data/log/',
-                 use_retrained_weights=False,
                  score_threshold=0.7,
                  iou_threshold=0.45,
                  input_shape=(416, 416)):
-        self.pretrained_weights_path = pretrained_weights_path
-        self.retrained_weights_path = retrained_weights_path
-        self.anchors_path = anchors_path
-        self.classes_path = classes_path
-        self.annotations_path = annotations_path
-        self.log_dir = log_dir
-        self.use_retrained_weights = use_retrained_weights
+        assert(initial_weights_path, "Initial weights path can not be empty!")
+        if is_training:
+            assert (annotations_path, "Annotations path can not be empty when train!")
+            self._annotations_path = annotations_path
+        self._anchors_path = anchors_path
+        self._classes_path = classes_path
+        self._log_dir = log_dir if log_dir.endswith('/') else log_dir + '/'
+        self._initial_weights_path = initial_weights_path
+        self._is_training = is_training
 
-        self.score_threshold = score_threshold
-        self.iou_threshold = iou_threshold
-        self.input_shape = input_shape
-        self.image_shape_placeholder = K.placeholder((2,), dtype='int32')
-        self.image_input = Input((None, None, 3), dtype='float32')
-        self.anchors = get_anchors(self.anchors_path)
-        self.max_boxes = 20
-        self.class_names = get_classes(self.classes_path)
-        self.sess = K.get_session()
+        self._score_threshold = score_threshold
+        self._iou_threshold = iou_threshold
+        self._input_shape = input_shape
+        self._image_shape_placeholder = K.placeholder((2,), dtype='int32')
+        self._image_input = Input((None, None, 3), dtype='float32')
+        self._anchors = get_anchors(self._anchors_path)
+        self._max_boxes = 100
+        self._class_names = get_classes(self._classes_path)
+        self._sess = K.get_session()
 
-        self.model = base_model(self.image_input)
-        # load model weights
-        self.model.load_weights(self.retrained_weights_path if self.use_retrained_weights else self.pretrained_weights_path)
-        assert self.model.layers[-1].output_shape[-1] == \
-            len(self.anchors) / len(self.model.outputs) * (len(self.class_names) + 5), \
-            'Mismatch between model and given anchor and class sizes'
+        if not self._is_training:
+            self._model = base_model(self._image_input)
+            # load model weights
+            self._model.load_weights(self._initial_weights_path)
+            assert self._model.layers[-1].output_shape[-1] == \
+                   len(self._anchors) / len(self._model.outputs) * (len(self._class_names) + 5), \
+                'Mismatch between model and given anchor and class sizes'
 
-        # get detected boxes
-        self.boxes, self.scores, self.classes = get_detected_boxes(self.model.outputs,
-                                                                   self.image_shape_placeholder,
-                                                                   self.anchors,
-                                                                   len(self.class_names),
-                                                                   self.score_threshold,
-                                                                   self.max_boxes,
-                                                                   self.iou_threshold)
+            # get detected boxes
+            self._boxes, self._scores, self._classes = get_detected_boxes(self._model.outputs,
+                                                                          self._image_shape_placeholder,
+                                                                          self._anchors,
+                                                                          len(self._class_names),
+                                                                          self._score_threshold,
+                                                                          self._max_boxes,
+                                                                          self._iou_threshold)
 
         # config color for each class box
-        hsv_tuples = [(x / len(self.class_names), 1.0, 1.0) for x in range(len(self.class_names))]
-        self.colors = list(map(lambda hsv: colorsys.hsv_to_rgb(hsv[0], hsv[1], hsv[2]), hsv_tuples))
-        self.colors = list(map(lambda rgb: (int(rgb[0] * 255.), int(rgb[1] * 255.), int(rgb[2] * 255.)), self.colors))
+        hsv_tuples = [(x / len(self._class_names), 1.0, 1.0) for x in range(len(self._class_names))]
+        self._colors = list(map(lambda hsv: colorsys.hsv_to_rgb(hsv[0], hsv[1], hsv[2]), hsv_tuples))
+        self._colors = list(map(lambda rgb: (int(rgb[0] * 255.), int(rgb[1] * 255.), int(rgb[2] * 255.)), self._colors))
         np.random.seed(23132)
-        np.random.shuffle(self.colors)
+        np.random.shuffle(self._colors)
         np.random.seed(None)
 
     def train(self, use_focal_loss=False):
         input_shape = (416, 416)
-        class_names = get_classes(self.classes_path)
-        anchors = get_anchors(self.anchors_path)
+        class_names = get_classes(self._classes_path)
+        anchors = get_anchors(self._anchors_path)
         num_classes = len(class_names)
         model = training_model(input_shape, anchors,
                                num_classes=len(class_names),
-                               weights_path=self.pretrained_weights_path,
-                               freeze_body=2,
+                               weights_path=self._initial_weights_path,
                                use_focal_loss=use_focal_loss)
 
-        logging = TensorBoard(self.log_dir)
-        checkpoint = ModelCheckpoint(self.log_dir + 'ep{epoch:03d}-loss{loss:.3f}-val_loss{val_loss:.3f}.h5',
+        logging = TensorBoard(self._log_dir)
+        checkpoint = ModelCheckpoint(self._log_dir + 'ep{epoch:03d}-loss{loss:.3f}-val_loss{val_loss:.3f}.h5',
                                      monitor='val_loss',
                                      save_weights_only=True,
                                      save_best_only=True,
@@ -95,7 +89,7 @@ class YOLOv3(object):
         early_stopping = EarlyStopping('val_loss', min_delta=0, patience=10, verbose=1)
 
         val_split = 0.1
-        with open(self.annotations_path) as f:
+        with open(self._annotations_path) as f:
             annotations = f.readlines()
         np.random.seed(4)
         np.random.shuffle(annotations)
@@ -119,7 +113,7 @@ class YOLOv3(object):
                 initial_epoch=0,
                 callbacks=[logging, checkpoint]
             )
-            model.save_weights(self.log_dir + 'trained_weights_stage_1.h5')
+            model.save_weights(self._log_dir + 'trained_weights_stage_1.h5')
 
         # fine tuning all layers
         if True:
@@ -139,19 +133,19 @@ class YOLOv3(object):
                 initial_epoch=50,
                 callbacks=[logging, checkpoint, reduce_lr, early_stopping]
             )
-            model.save_weights(self.log_dir + 'trained_weights_stage_final.h5')
+            model.save_weights(self._log_dir + 'trained_weights_stage_final.h5')
 
     def detect_image(self, image):
         start = timer()
-        resized_input_image = resize_image(image, self.input_shape)
+        resized_input_image = resize_image(image, self._input_shape)
         image_data = np.array(resized_input_image, dtype='float32')
         image_data /= 255.
         image_data = np.expand_dims(image_data, axis=0)
         print('input image shape:', image_data.shape)
-        boxes, scores, classes = self.sess.run([self.boxes, self.scores, self.classes],
-                                               feed_dict={
-                                                   self.model.input: image_data,
-                                                   self.image_shape_placeholder: [image.size[0], image.size[1]],
+        boxes, scores, classes = self._sess.run([self._boxes, self._scores, self._classes],
+                                                feed_dict={
+                                                   self._model.input: image_data,
+                                                   self._image_shape_placeholder: [image.size[0], image.size[1]],
                                                    K.learning_phase(): 0
                                                })
 
@@ -161,7 +155,7 @@ class YOLOv3(object):
         thickness = (image.size[0] + image.size[1]) // 400
 
         for i, c in reversed(list(enumerate(classes))):
-            predicted_class = self.class_names[c]
+            predicted_class = self._class_names[c]
             box = boxes[i]
             score = scores[i]
             label = '{} {:.2f}'.format(predicted_class, score)
@@ -181,9 +175,9 @@ class YOLOv3(object):
                 text_origin = np.array([left, top + 1])
 
             for t in range(thickness):
-                draw.rectangle([left + t, top + t, right - t, bottom - t], outline=self.colors[c])
+                draw.rectangle([left + t, top + t, right - t, bottom - t], outline=self._colors[c])
 
-            draw.rectangle([tuple(text_origin), tuple(text_origin + label_size)], fill=self.colors[c])
+            draw.rectangle([tuple(text_origin), tuple(text_origin + label_size)], fill=self._colors[c])
             draw.text(text_origin, label, fill=(0, 0, 0), font=font)
 
             del draw
@@ -192,14 +186,6 @@ class YOLOv3(object):
         return image
 
     def close_session(self):
-        self.sess.close()
+        self._sess.close()
 
-
-def _main(args):
-    yolo = YOLOv3(annotations_path=str(args.annotations_path), use_retrained_weights=bool(args.use_retrained_weights))
-    yolo.train(use_focal_loss=bool(args.use_focal_loss))
-
-
-if __name__ == '__main__':
-    _main(parser.parse_args())
 
