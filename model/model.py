@@ -399,10 +399,10 @@ def training_model(input_shape, anchors, num_classes, weights_path,
                for s in range(0, scales_count)]
 
     if load_pretrained:
-        print('*************Start loading initial weights...')
+        print('#############Start loading initial weights...')
         model.load_weights(weights_path, by_name=True, skip_mismatch=True)
-        print('*************Finish loading initial weights')
-        print('*************{} is freezed'.format(freeze_body_mode))
+        print('#############Finish loading initial weights')
+        print('#############{} is freezed'.format(freeze_body_mode))
         if freeze_body_mode == 'DARKNET':
             num = 185
         elif freeze_body_mode == 'ALL_BUT_OUTPUTS':
@@ -412,7 +412,7 @@ def training_model(input_shape, anchors, num_classes, weights_path,
         for i in range(0, num):
             model.layers[i].trainable = False
 
-    print('*************Is using {} loss'.format('focal' if use_focal_loss else 'normal'))
+    print('#############Is using {} loss'.format('focal' if use_focal_loss else 'normal'))
 
     loss_layer = Lambda(focal_loss if use_focal_loss else loss,
                         name='yolo_loss',
