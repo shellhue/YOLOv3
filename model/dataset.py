@@ -209,7 +209,7 @@ def get_augmented_data(annotation_line, input_shape, random=True, max_boxes=20, 
     return image_data, box_data
 
 
-def data_generator(annotations, input_shape, batch_size, anchors, num_classes):
+def data_generator(annotations, input_shape, batch_size, anchors, num_classes, max_boxes=20):
     """Sample generator, can infinitely generate sample data
 
     annotations: array, list of annotation string
@@ -217,6 +217,7 @@ def data_generator(annotations, input_shape, batch_size, anchors, num_classes):
     batch_size: int
     anchors: array, shape=[N, 2)
     num_classes: int
+    max_boxes: int
     return: prepared input data
     """
     annotations = np.array(annotations)
@@ -229,7 +230,7 @@ def data_generator(annotations, input_shape, batch_size, anchors, num_classes):
             if i == 0:
                 np.random.shuffle(annotations)
             annotation = annotations[i]
-            image_data, box_data = get_augmented_data(annotation, input_shape, random=False)
+            image_data, box_data = get_augmented_data(annotation, input_shape, random=False, max_boxes=max_boxes)
             image_datas.append(image_data)
             boxes.append(box_data)
             i = (i + 1) % n

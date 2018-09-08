@@ -1,12 +1,22 @@
 import argparse
 from YOLOv3 import YOLOv3
 
+
+def str2bool(v):
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
+
 parser = argparse.ArgumentParser(description='Darknet To Keras Converter.')
 parser.add_argument('--initial_weights_path', help='The weights used to initial model')
 parser.add_argument('--annotations_path', help='Path to annotations.')
 parser.add_argument('--classes_path', help='Path to classes.')
 parser.add_argument('--log_dir', help='the dir to log.')
-parser.add_argument('--use_focal_loss', help='Whether use focal loss.')
+parser.add_argument('--use_focal_loss', type=str2bool, help='Whether use focal loss.')
 
 
 def _main(args):
@@ -23,7 +33,7 @@ def _main(args):
         **kwargs
     )
 
-    yolo.train(use_focal_loss=bool(args.use_focal_loss))
+    yolo.train(use_focal_loss=args.use_focal_loss)
 
 
 if __name__ == '__main__':

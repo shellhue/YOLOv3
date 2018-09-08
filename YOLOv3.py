@@ -93,8 +93,8 @@ class YOLOv3(object):
             annotations = f.readlines()
         np.random.seed(4)
         np.random.shuffle(annotations)
-        num_val = int(len(annotations) // 1000 * val_split)
-        num_train = len(annotations) // 1000 - num_val
+        num_val = int(len(annotations) // 100 * val_split)
+        num_train = len(annotations) // 100 - num_val
         batch_size = 8
 
         # first just train the three output layer
@@ -105,7 +105,8 @@ class YOLOv3(object):
                     'yolo_loss': lambda label, pred: pred
                 })
             model.fit_generator(
-                data_generator(annotations[:num_train], input_shape, batch_size, anchors, num_classes),
+                data_generator(annotations[:num_train], input_shape, batch_size, anchors,
+                               num_classes, max_boxes=self._max_boxes),
                 steps_per_epoch=max(1, num_train // batch_size),
                 epochs=50,
                 validation_data=data_generator(annotations[num_train:], input_shape, batch_size, anchors, num_classes),
@@ -125,7 +126,8 @@ class YOLOv3(object):
                     'yolo_loss': lambda label, pred: pred
                 })
             model.fit_generator(
-                data_generator(annotations[:num_train], input_shape, batch_size, anchors, num_classes),
+                data_generator(annotations[:num_train], input_shape, batch_size, anchors,
+                               num_classes, max_boxes=self._max_boxes),
                 steps_per_epoch=max(1, num_train // batch_size),
                 epochs=100,
                 validation_data=data_generator(annotations[num_train:], input_shape, batch_size, anchors, num_classes),

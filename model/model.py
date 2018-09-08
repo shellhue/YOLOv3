@@ -315,8 +315,6 @@ def focal_loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False
     losses = 0
     xy_losses = 0
     wh_losses = 0
-    raw_box_xy_sum = 0
-    raw_true_xy_sum = 0
     class_losses = 0
     confidence_losses = 0
 
@@ -365,15 +363,13 @@ def focal_loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False
         confidence_loss = K.sum(confidence_loss) / mf
         xy_losses += xy_loss
         wh_losses += wh_loss
-        raw_box_xy_sum += K.sum(true_mask * raw_box_xy) / mf
-        raw_true_xy_sum += K.sum(true_mask * raw_true_xy) / mf
         class_losses += class_loss
         confidence_losses += confidence_loss
 
         losses += xy_loss + wh_loss + class_loss + confidence_loss
 
     if print_loss:
-        losses = tf.Print(losses, [raw_box_xy_sum, raw_true_xy_sum, losses, xy_losses, wh_losses, class_losses, confidence_losses], message=' yolo loss: ')
+        losses = tf.Print(losses, [losses, xy_losses, wh_losses, class_losses, confidence_losses], message=' yolo loss: ')
 
     return losses
 
@@ -403,10 +399,10 @@ def training_model(input_shape, anchors, num_classes, weights_path,
                for s in range(0, scales_count)]
 
     if load_pretrained:
-        print('Start loading initial weights...')
+        print('*************Start loading initial weights...')
         model.load_weights(weights_path, by_name=True, skip_mismatch=True)
-        print('Finish loading initial weights')
-        print('{} is freezed'.format(freeze_body_mode))
+        print('*************Finish loading initial weights')
+        print('*************{} is freezed'.format(freeze_body_mode))
         if freeze_body_mode == 'DARKNET':
             num = 185
         elif freeze_body_mode == 'ALL_BUT_OUTPUTS':
@@ -416,7 +412,7 @@ def training_model(input_shape, anchors, num_classes, weights_path,
         for i in range(0, num):
             model.layers[i].trainable = False
 
-    print('Is using {} loss'.format('focal' if use_focal_loss else 'normal'))
+    print('*************Is using {} loss'.format('focal' if use_focal_loss else 'normal'))
 
     loss_layer = Lambda(focal_loss if use_focal_loss else loss,
                         name='yolo_loss',
