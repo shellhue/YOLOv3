@@ -84,7 +84,7 @@ class YOLOv3(object):
                                      monitor='val_loss',
                                      save_weights_only=True,
                                      save_best_only=True,
-                                     period=3)
+                                     period=1)
         reduce_lr = ReduceLROnPlateau('val_loss', factor=0.1, patience=3, verbose=1)
         early_stopping = EarlyStopping('val_loss', min_delta=0, patience=10, verbose=1)
 
