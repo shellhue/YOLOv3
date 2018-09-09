@@ -81,6 +81,7 @@ class YOLOv3(object):
         model = training_model(input_shape, anchors,
                                num_classes=len(class_names),
                                weights_path=self._initial_weights_path,
+                               freeze_body_mode='DARKNET',
                                use_focal_loss=use_focal_loss)
 
         logging = TensorBoard(self._log_dir)

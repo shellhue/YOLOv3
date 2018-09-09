@@ -40,7 +40,7 @@ def true_boxes_to_labels(true_boxes, input_shape, anchors, num_classes):
     anchors_mins = -anchors_maxes  # shape=(1, num_anchors, 2)
     anchor_area = anchors[..., 0] * anchors[..., 1]  # shape=(1, num_anchors)
 
-    true_boxes_mask = box_wh[..., 0] > 0  # shape=(m, num_boxes)
+    true_boxes_mask = (box_wh[..., 0] > 0) * (box_wh[..., 1] > 0)  # shape=(m, num_boxes)
 
     for b in range(0, m):
         true_boxes_wh = box_wh[b][true_boxes_mask[b]]  # shape=(num_true_boxes, 2)
@@ -60,7 +60,7 @@ def true_boxes_to_labels(true_boxes, input_shape, anchors, num_classes):
         intersect_wh = intersect_max - intersect_min  # shape=(num_true_boxes, num_anchors, 2)
         intersect_area = intersect_wh[..., 0] * intersect_wh[..., 1]  # shape=(num_true_boxes, num_anchors)
 
-        iou = intersect_area / (anchor_area + true_boxes_area - intersect_area)  # shape=(num_true_boxes, N)
+        iou = intersect_area / (anchor_area + true_boxes_area - intersect_area)  # shape=(num_true_boxes, num_anchors)
 
         best_iou = np.argmax(iou, axis=-1)  # shape=(num_true_boxes)
 
