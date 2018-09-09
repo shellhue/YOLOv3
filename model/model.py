@@ -403,6 +403,7 @@ def training_model(input_shape, anchors, num_classes, weights_path,
         model.load_weights(weights_path, by_name=True, skip_mismatch=True)
         print('############# Finish loading initial weights')
         print('############# {} is freezed'.format(freeze_body_mode))
+
         if freeze_body_mode == 'DARKNET':
             num = 185
         elif freeze_body_mode == 'ALL_BUT_OUTPUTS':
@@ -411,6 +412,8 @@ def training_model(input_shape, anchors, num_classes, weights_path,
             num = len(model.layers) - 3
         for i in range(0, num):
             model.layers[i].trainable = False
+        for i in range(num, len(model.layers)):
+            model.layers[i].trainable = True
 
     print('############# Is using {} loss'.format('focal' if use_focal_loss else 'normal'))
 

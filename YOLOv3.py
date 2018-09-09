@@ -1,7 +1,7 @@
 import numpy as np
 import colorsys
 from timeit import default_timer as timer
-from PIL import Image, ImageFont, ImageDraw
+from PIL import ImageFont, ImageDraw
 
 import keras.backend as K
 from keras.layers import Input
