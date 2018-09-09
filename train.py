@@ -33,7 +33,7 @@ def _main(args):
         **kwargs
     )
 
-    yolo.train(use_focal_loss=False)
+    yolo.train(use_focal_loss=args.use_focal_loss)
 
 
 if __name__ == '__main__':

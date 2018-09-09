@@ -201,13 +201,14 @@ def box_iou(pred, y_true):
     return iou
 
 
-def loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False):
+def loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False, use_focal_loss=False):
     """ Compute yolo loss
     inputs: list of tensor, [y1, y2, y3, y_true1, y_true2, y_true3], shape=(b, h, w, num_anchors, 5 + num_classes)
     anchors: array, shape=(N, 2), each anchor value is wh
     num_classes: integer
     ignore_thresh: float, the ignore thresh
     print_loss: bool, whether should print loss
+    use_focal_loss: bool
 
     Return: tensor, shape=(1,), the loss tensor
     """
@@ -267,10 +268,16 @@ def loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False):
         clipped_raw_box_wh = K.clip(raw_box_wh, K.epsilon(), 100)
         clipped_raw_true_wh = K.clip(raw_true_wh, K.epsilon(), 100)
         wh_loss = true_mask * loss_scale * 0.5 * K.square(K.sqrt(clipped_raw_box_wh) - K.sqrt(clipped_raw_true_wh))
-
-        class_loss = true_mask * K.binary_crossentropy(y_true[..., 5:], box_classes, from_logits=False)
-        confidence_loss = true_mask * K.binary_crossentropy(y_true[..., 4:5], box_confidence, from_logits=False) + \
-                          (1 - true_mask) * K.binary_crossentropy(y_true[..., 4:5], box_confidence, from_logits=False) * ignore_mask
+        if use_focal_loss:
+            class_loss = true_mask * utils.sigmoid_focal_loss(y_true=y_true[..., 5:], y=box_classes, gama=2.0)
+            confidence_loss = utils.sigmoid_focal_loss(y=box_confidence, y_true=y_true[..., 4:5],
+                                                       gama=2.0) * true_mask + \
+                              utils.sigmoid_focal_loss(y=box_confidence, y_true=y_true[..., 4:5], gama=2.0) * (
+                              1 - true_mask) * ignore_mask
+        else:
+            class_loss = true_mask * K.binary_crossentropy(y_true[..., 5:], box_classes, from_logits=False)
+            confidence_loss = true_mask * K.binary_crossentropy(y_true[..., 4:5], box_confidence, from_logits=False) + \
+                              (1 - true_mask) * K.binary_crossentropy(y_true[..., 4:5], box_confidence, from_logits=False) * ignore_mask
         xy_loss = K.sum(xy_loss) / mf
         wh_loss = K.sum(wh_loss) / mf
         class_loss = K.sum(class_loss) / mf
@@ -281,92 +288,6 @@ def loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False):
         confidence_losses += confidence_loss
 
         losses += (xy_loss + wh_loss + class_loss + confidence_loss)
-
-    if print_loss:
-        losses = tf.Print(losses, [losses, xy_losses, wh_losses, class_losses, confidence_losses], message=' yolo loss: ')
-
-    return losses
-
-
-def focal_loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False):
-    """ Compute yolo loss
-    inputs: list of tensor, [y1, y2, y3, y_true1, y_true2, y_true3], shape=(b, h, w, num_anchors, 5 + num_classes)
-    anchors: array, shape=(N, 2), each anchor value is wh
-    num_classes: integer
-    ignore_thresh: float, the ignore thresh
-    print_loss: bool, whether should print loss
-
-    Return: tensor, shape=(1,), the loss tensor
-    """
-    assert len(inputs) == 6, 'inputs should has six entry'
-    predicts = inputs[:3]  # list of tensor
-    labels = inputs[3:]  # list of tensor
-
-    float_type = K.dtype(predicts[0])
-
-    m = K.shape(predicts[0])[0]
-    mf = K.cast(m, dtype=float_type)
-
-    num_scales = len(predicts)
-    input_shape = K.cast(K.shape(predicts[0])[1:3] * 32, dtype=float_type)[..., ::-1]  # wh
-    anchor_masks = [[6, 7, 8], [3, 4, 5], [0, 1, 2]]
-    anchors = np.array(anchors, dtype=float_type)
-
-    losses = 0
-    xy_losses = 0
-    wh_losses = 0
-    class_losses = 0
-    confidence_losses = 0
-
-    for s in range(num_scales):
-        y_true = K.cast(labels[s], dtype=float_type)
-        true_mask = y_true[..., 4:5]
-        true_mask_bool = K.cast(true_mask, dtype='bool')
-        box_xy, box_wh, box_confidence, box_classes, \
-            raw_box_xy, raw_box_wh, grid = post_process_pred(predicts[s], input_shape,
-                                                             anchors[anchor_masks[s]], num_classes)
-        grid_shape = K.shape(grid)[:2]
-        grid_shape = K.cast(grid_shape, dtype=float_type)
-
-        loss_scale = 2 - y_true[..., 2:3] * y_true[..., 3:4]
-        loss_scale = K.clip(loss_scale, 0.0, 2.0)
-
-        raw_true_xy = y_true[..., :2] * grid_shape[::-1] - grid[..., ::-1]
-        raw_true_wh = K.log(y_true[..., 2:4] * input_shape / anchors[anchor_masks[s]])
-        raw_true_wh = K.switch(true_mask, raw_true_wh, K.zeros_like(raw_true_wh, dtype=float_type))
-
-        ignore_mask = tf.TensorArray(dtype=float_type, size=1, dynamic_size=True)
-        box_xywh = K.concatenate([box_xy, box_wh], axis=-1)
-        true_xywh = K.concatenate([raw_true_xy, raw_true_wh])
-
-        def loop_body(b, ignore_mask):
-            true_boxes = tf.boolean_mask(true_xywh[b, ...], mask=true_mask_bool[b, ..., 0])  # shape=[j, 4]
-            iou = box_iou(box_xywh[b, ...], true_boxes)
-            best_iou = K.max(iou, axis=-1, keepdims=True)
-            ignore_mask = ignore_mask.write(b, K.cast(best_iou < ignore_thresh, dtype=float_type))
-
-            return b + 1, ignore_mask
-
-        _, ignore_mask = K.control_flow_ops.while_loop(lambda b, *args: b < m, loop_body, [0, ignore_mask])
-        ignore_mask = ignore_mask.stack()
-
-        xy_loss = true_mask * loss_scale * K.square(raw_true_xy - raw_box_xy)
-        clipped_raw_box_wh = K.clip(raw_box_wh, K.epsilon(), 100)
-        clipped_raw_true_wh = K.clip(raw_true_wh, K.epsilon(), 100)
-        wh_loss = true_mask * loss_scale * 0.5 * K.square(K.sqrt(clipped_raw_box_wh) - K.sqrt(clipped_raw_true_wh))
-        class_loss = true_mask * utils.sigmoid_focal_loss(y_true=y_true[..., 5:], y=box_classes, gama=2.0)
-        confidence_loss = utils.sigmoid_focal_loss(y=box_confidence, y_true=y_true[..., 4:5], gama=2.0) * true_mask + \
-                          utils.sigmoid_focal_loss(y=box_confidence, y_true=y_true[..., 4:5], gama=2.0) * (1 - true_mask) * ignore_mask
-        xy_loss = K.sum(xy_loss) / mf
-        wh_loss = K.sum(wh_loss) / mf
-        class_loss = K.sum(class_loss) / mf
-        confidence_loss = K.sum(confidence_loss) / mf
-        xy_losses += xy_loss
-        wh_losses += wh_loss
-        class_losses += class_loss
-        confidence_losses += confidence_loss
-
-        losses += xy_loss + wh_loss + class_loss + confidence_loss
 
     if print_loss:
         losses = tf.Print(losses, [losses, xy_losses, wh_losses, class_losses, confidence_losses], message=' yolo loss: ')
@@ -417,14 +338,15 @@ def training_model(input_shape, anchors, num_classes, weights_path,
 
     print('############# Is using {} loss'.format('focal' if use_focal_loss else 'normal'))
 
-    loss_layer = Lambda(focal_loss if use_focal_loss else loss,
+    loss_layer = Lambda(loss,
                         name='yolo_loss',
                         output_shape=(1,),
                         arguments={
                             'anchors': anchors,
                             'ignore_thresh': 0.5,
                             'print_loss': True,
-                            'num_classes': num_classes
+                            'num_classes': num_classes,
+                            'use_focal_loss': use_focal_loss
                         })([*model.output, *y_trues])
 
     return Model([model.input, *y_trues], loss_layer)
