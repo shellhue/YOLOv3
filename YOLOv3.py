@@ -97,8 +97,8 @@ class YOLOv3(object):
             annotations = f.readlines()
         np.random.seed(4)
         np.random.shuffle(annotations)
-        num_val = int(len(annotations) // 1 * val_split)
-        num_train = len(annotations) // 1 - num_val
+        num_val = int(len(annotations) // 100 * val_split)
+        num_train = len(annotations) // 100 - num_val
         batch_size = 8
 
         # first just train the three output layer
