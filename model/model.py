@@ -242,7 +242,7 @@ def loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False):
         grid_shape = K.cast(grid_shape, dtype=float_type)
 
         loss_scale = 2 - y_true[..., 2:3] * y_true[..., 3:4]
-        loss_scale = K.clip(loss_scale, 0.0, 2.0)
+        loss_scale = K.clip(loss_scale, 0, 2.0)
 
         raw_true_xy = y_true[..., :2] * grid_shape[::-1] - grid[..., ::-1]
         raw_true_wh = K.log(y_true[..., 2:4] * input_shape / anchors[anchor_masks[s]])
@@ -264,8 +264,8 @@ def loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False):
         ignore_mask = ignore_mask.stack()
 
         xy_loss = true_mask * loss_scale * K.square(raw_true_xy - raw_box_xy)
-        clipped_raw_box_wh = K.clip(raw_box_wh, 0, 100)
-        clipped_raw_true_wh = K.clip(raw_true_wh, 0, 100)
+        clipped_raw_box_wh = K.clip(raw_box_wh, K.epsilon(), 100)
+        clipped_raw_true_wh = K.clip(raw_true_wh, K.epsilon(), 100)
         wh_loss = true_mask * loss_scale * 0.5 * K.square(K.sqrt(clipped_raw_box_wh) - K.sqrt(clipped_raw_true_wh))
 
         class_loss = true_mask * K.binary_crossentropy(y_true[..., 5:], box_classes, from_logits=False)
