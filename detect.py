@@ -35,10 +35,11 @@ def _main(args):
     )
 
     source_images = []
+    print(source_images_dir)
     print('######### fetching all filenames ##########')
     for (_, _, filename) in walk(source_images_dir):
         source_images.extend(filename)
-
+    print(source_images)
     for source_image_filename in source_images:
         try:
             print('######### loading image with name: {} ##########'.format(source_image_filename))

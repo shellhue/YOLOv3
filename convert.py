@@ -39,7 +39,7 @@ parser.add_argument(
 def unique_config_sections(config_file):
     """Convert all config sections to have unique names.
 
-    Adds unique suffixes to config sections for compability with configparser.
+    Adds unique suffixes to config sections for compability with configp arser.
     """
     section_counters = defaultdict(int)
     output_stream = io.StringIO()
@@ -259,4 +259,5 @@ def _main(args):
 
 
 if __name__ == '__main__':
+    print(parser.parse_args())
     _main(parser.parse_args())
