@@ -19,7 +19,7 @@ from keras.layers.normalization import BatchNormalization
 from keras.models import Model
 from keras.regularizers import l2
 from keras.utils.vis_utils import plot_model as plot
-
+from model.YOLOv3 import YOLOv3
 
 parser = argparse.ArgumentParser(description='Darknet To Keras Converter.')
 parser.add_argument('config_path', help='Path to Darknet cfg file.')

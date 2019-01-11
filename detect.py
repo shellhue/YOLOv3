@@ -1,9 +1,8 @@
 from PIL import Image
 import argparse
-from YOLOv3 import YOLOv3
 from os import walk
 import os
-
+from model.YOLOv3 import YOLOv3
 
 parser = argparse.ArgumentParser(description='Darknet To Keras Converter.')
 parser.add_argument('--weights_path', help='The weights used to initial model')
@@ -38,19 +37,23 @@ def _main(args):
     print(source_images_dir)
     print('######### fetching all filenames ##########')
     for (_, _, filename) in walk(source_images_dir):
-        source_images.extend(filename)
+        files = []
+        for f in filename:
+            if f.lower().endswith('.jpg') or f.lower().endswith('.png') or f.lower().endswith('.jpeg'):
+                files.append(source_images_dir + f)
+        source_images.extend(files)
     print(source_images)
-    for source_image_filename in source_images:
+    for source_image_path in source_images:
         try:
-            print('######### loading image with name: {} ##########'.format(source_image_filename))
-            image = Image.open(source_images_dir + source_image_filename)
+            image = Image.open(source_image_path)
         except:
-            print('Invalid image file name: {}'.format(source_images_dir + source_image_filename))
             continue
-        print('######### detecting image with name: {} ##########'.format(source_image_filename))
+        print('######### detecting image with name: {} ##########'.format(
+            source_image_path))
         detected_source_image = yolo.detect_image(image)
-        print('######### saving detected image with name: {} ##########'.format(source_image_filename))
-        detected_source_image.save(output_dir + source_image_filename, 'JPEG')
+        print('######### detected image saved to: {} ##########'.format(
+            output_dir + source_image_path.split('/')[-1]))
+        detected_source_image.save(output_dir + source_image_path.split('/')[-1], 'JPEG')
     print('######### finishing image detecting ##########')
     yolo.close_session()
 
