@@ -11,8 +11,9 @@ from keras.layers import Add
 from keras.layers.advanced_activations import LeakyReLU
 from keras.regularizers import l2
 
-from model.utils import squeeze
+from model.utils import serial_apply
 import model.utils as utils
+
 
 def DarknetConv2D(*args, **kwargs):
     """darknet conv2D using l2 regularizer and the corresponding padding"""
@@ -28,7 +29,7 @@ def DarknetConv2D_BN_LeakyReLU(*args, **kwargs):
     """darknet conv2D using LeakyReLU and BatchNormalization"""
     some_kwargs = {'use_bias': False}
     some_kwargs.update(kwargs)
-    return squeeze(
+    return serial_apply(
         DarknetConv2D(*args, **some_kwargs),
         BatchNormalization(),
         LeakyReLU(alpha=0.1)
@@ -43,13 +44,13 @@ def residual_block(x, num_filters, num_blocks):
     num_blocks: int, the number of the residual block
     Return: tensor, the output of the residual block
     """
-    x = squeeze(
+    x = serial_apply(
         ZeroPadding2D(((1, 0), (1, 0))),
         DarknetConv2D_BN_LeakyReLU(num_filters, (3, 3), strides=2)
     )(x)
-    for i in range(num_blocks):
+    for _ in range(num_blocks):
         residual_input = x
-        x = squeeze(
+        x = serial_apply(
             DarknetConv2D_BN_LeakyReLU(num_filters // 2, (1, 1)),
             DarknetConv2D_BN_LeakyReLU(num_filters, (3, 3))
         )(residual_input)
@@ -86,19 +87,19 @@ def predict(x, num_filters, side_x=None, up_sampling=False):
     Return: tuple of tensor, (x, y), x is the extracted features from this scale, y is the output of this scale
     """
     if up_sampling:
-        side_x = squeeze(
+        side_x = serial_apply(
             DarknetConv2D_BN_LeakyReLU(num_filters, (1, 1)),
             UpSampling2D(size=(2, 2))
         )(side_x)
         x = concatenate([side_x, x])
-    x = squeeze(
+    x = serial_apply(
         DarknetConv2D_BN_LeakyReLU(num_filters, (1, 1)),
         DarknetConv2D_BN_LeakyReLU(num_filters * 2, (3, 3)),
         DarknetConv2D_BN_LeakyReLU(num_filters, (1, 1)),
         DarknetConv2D_BN_LeakyReLU(num_filters * 2, (3, 3)),
         DarknetConv2D_BN_LeakyReLU(num_filters, (1, 1))
     )(x)
-    y = squeeze(
+    y = serial_apply(
         DarknetConv2D_BN_LeakyReLU(num_filters * 2, (3, 3)),
         Conv2D(255, (1, 1), strides=1, padding='same')
     )(x)

@@ -25,11 +25,11 @@ def resize_image(image, size):
     return new_image
 
 
-def squeeze(*funcs):
-    """squeeze a list of functions to one
+def serial_apply(*funcs):
+    """serial apply a list of functions
 
     funcs: a list of functions
-    Returns: squeezed function
+    Returns: the function after serially applied
     """
     def squeezed(*args, **kwargs):
         first_func = funcs[0]

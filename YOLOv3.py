@@ -18,9 +18,9 @@ class YOLOv3(object):
                  initial_weights_path,
                  is_training,
                  annotations_path=None,
-                 anchors_path="model_data/yolo_anchors.txt",
-                 classes_path="model_data/coco_classes.txt",
-                 log_dir='model_data/log/',
+                 anchors_path="data/yolo_anchors.txt",
+                 classes_path="data/coco_classes.txt",
+                 log_dir='log/',
                  score_threshold=0.7,
                  iou_threshold=0.5,
                  input_shape=(416, 416)):
@@ -188,7 +188,7 @@ class YOLOv3(object):
 
             del draw
         end = timer()
-        print('detecting takes: %.9f', end - start)
+        print('detecting takes: {:.2f}s'.format(end - start))
         return image
 
     def close_session(self):
