@@ -350,7 +350,7 @@ def training_model(input_shape, anchors, num_classes, weights_path,
                             'use_focal_loss': use_focal_loss
                         })([*model.output, *y_trues])
 
-    return Model([model.input, *y_trues], loss_layer)
+    return Model(inputs=[model.input, *y_trues], outputs=loss_layer)
 
 
 def get_detected_boxes(predicts, image_shape, anchors, num_classes,

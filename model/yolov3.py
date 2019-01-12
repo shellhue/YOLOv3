@@ -83,7 +83,10 @@ class YOLOv3(object):
                                weights_path=self._initial_weights_path,
                                freeze_body_mode='DARKNET',
                                use_focal_loss=use_focal_loss)
-
+        print("model.inputs=========")
+        print(model.inputs)
+        print(model.outputs)
+        print("model.outputs=========")
         logging = TensorBoard(self._log_dir)
         checkpoint = ModelCheckpoint(self._log_dir + 'ep{epoch:03d}-loss{loss:.3f}-val_loss{val_loss:.3f}.h5',
                                      monitor='val_loss',
