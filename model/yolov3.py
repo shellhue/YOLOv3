@@ -105,12 +105,15 @@ class YOLOv3(object):
         num_train = len(annotations) - num_val
         batch_size = 8
 
+        def yolo_loss(label, pred):
+            print(pred)
+            return 100 * pred
         # first just train the three output layer
         if True:
             model.compile(
                 Adam(lr=1e-3),
                 loss={
-                    'yolo_loss': lambda label, pred: pred * 100
+                    'yolo_loss': yolo_loss
                 })
             model.fit_generator(
                 data_generator(annotations[:num_train], input_shape, batch_size, anchors,
