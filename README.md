@@ -8,7 +8,7 @@ python convert.py \
 ```
 
 ### 检测图片 ###
-检测图片执行以下脚本
+将需要检测的图片放到`samples`目录下，然后执行以下脚本
 ```bash
 python detect.py \
 	--weights_path=data/yolov3.h5 \
