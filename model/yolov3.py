@@ -122,7 +122,7 @@ class YOLOv3(object):
             model.save_weights(self._log_dir + 'trained_weights_stage_1.h5')
 
         # fine tuning all layers
-        if True:
+        if False:
             for l in range(len(model.layers)):
                 model.layers[l].trainable = True
             model.compile(
