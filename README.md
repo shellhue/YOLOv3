@@ -16,3 +16,19 @@ python detect.py \
 	--classes_path=data/coco_classes.txt \
 	--output_dir=samples/detected
 ```
+
+### 训练 ###
+
+#### convert coco dataset ####
+将coco数据集转成训练所需的目标格式，运行如下脚本
+```
+pyhon coco_annotation.py \
+	--coco_image_dir=/home/shellhue/coco2017/train2017 \
+	--coco_annotation_path=/home/shellhue/coco2017/annotations/instances_train2017.json \
+	--output_path=/home/shellhue/coco2017/train.txt
+
+pyhon coco_annotation.py \
+	--coco_image_dir=/home/shellhue/coco2017/val2017 \
+	--coco_annotation_path=/home/shellhue/coco2017/annotations/instances_val2017.json \
+	--output_path=/home/shellhue/coco2017/val.txt
+```
