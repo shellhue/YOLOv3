@@ -17,7 +17,7 @@ def _main(args):
     annotations = data['annotations']
     for ant in annotations:
         id = ant['image_id']
-        name = args.coco_image_dir + ('%012d.jpg' % id)
+        name = path.join(args.coco_image_dir, '%012d.jpg' % id)
         cat = ant['category_id']
 
         if cat >= 1 and cat <= 11:
