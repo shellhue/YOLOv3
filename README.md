@@ -32,3 +32,13 @@ python coco_annotation.py \
 	--coco_annotation_path=/home/shellhue/coco2017/annotations/instances_val2017.json \
 	--output_path=/home/shellhue/coco2017/val.txt
 ```
+
+#### train ####
+```
+python train.py \
+	--initial_weights_path=data/yolov3.h5 \
+	--annotations_path=/home/shellhue/coco2017/train.txt \
+	--classes_path=data/coco_classes.txt \
+	--log_dir=log \
+	--use_focal_loss=0
+```
