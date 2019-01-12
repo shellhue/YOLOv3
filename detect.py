@@ -2,7 +2,7 @@ from PIL import Image
 import argparse
 from os import walk
 import os
-from model.YOLOv3 import YOLOv3
+from model.yolov3 import YOLOv3
 
 parser = argparse.ArgumentParser(description='Darknet To Keras Converter.')
 parser.add_argument('--weights_path', help='The weights used to initial model')

@@ -10,7 +10,7 @@ from keras.callbacks import TensorBoard, ModelCheckpoint, ReduceLROnPlateau, Ear
 
 from model.model import get_detected_boxes, base_model, training_model
 from model.utils import resize_image
-from model.dataset import get_classes, get_anchors, data_generator
+from model.data import get_classes, get_anchors, data_generator
 
 
 class YOLOv3(object):
@@ -18,9 +18,9 @@ class YOLOv3(object):
                  initial_weights_path,
                  is_training,
                  annotations_path=None,
-                 anchors_path="data/yolo_anchors.txt",
-                 classes_path="data/coco_classes.txt",
-                 log_dir='log/',
+                 anchors_path="../data/yolo_anchors.txt",
+                 classes_path="../data/coco_classes.txt",
+                 log_dir='../log/',
                  score_threshold=0.7,
                  iou_threshold=0.5,
                  input_shape=(416, 416)):
@@ -156,7 +156,7 @@ class YOLOv3(object):
                                                })
 
         # draw boxes
-        font = ImageFont.truetype(font='font/FiraMono-Medium.otf',
+        font = ImageFont.truetype(font='../font/FiraMono-Medium.otf',
                                   size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
         thickness = (image.size[0] + image.size[1]) // 400
 

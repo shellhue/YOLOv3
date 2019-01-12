@@ -1,5 +1,5 @@
 import argparse
-from YOLOv3 import YOLOv3
+from model.yolov3 import YOLOv3
 
 
 def str2bool(v):
