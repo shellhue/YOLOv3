@@ -13,7 +13,6 @@ python convert.py \
 python detect.py \
 	--weights_path=data/yolov3.h5 \
 	--source_images_dir=samples \
-	--classes_path=data/coco_classes.txt \
 	--output_dir=samples/detected
 ```
 
@@ -38,7 +37,5 @@ python coco_annotation.py \
 python train.py \
 	--initial_weights_path=data/yolov3.h5 \
 	--annotations_path=/home/shellhue/coco2017/train.txt \
-	--classes_path=data/coco_classes.txt \
-	--log_dir=log \
 	--use_focal_loss=0
 ```
