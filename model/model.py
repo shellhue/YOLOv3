@@ -242,10 +242,10 @@ def loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False, use_
         box_xy, box_wh, box_confidence, box_classes, \
             raw_box_xy, raw_box_wh, grid = post_process_pred(predicts[s], input_shape,
                                                              anchors[anchor_masks[s]], num_classes)
-        grid_shape = K.shape(grid)[:2]
-        grid_shape = K.cast(grid_shape, dtype=float_type)
+        grid_shape = K.shape(grid)[:2] # hw
+        grid_shape = K.cast(grid_shape, dtype=float_type)  # hw
 
-        loss_scale = 2 - y_true[..., 2:3] * y_true[..., 3:4]
+        loss_scale = 2 - y_true[..., 2:3] * y_true[..., 3:4] # small objects get larger scale
         loss_scale = K.clip(loss_scale, 0, 2.0)
 
         raw_true_xy = y_true[..., :2] * grid_shape[::-1] - grid[..., ::-1]
@@ -254,7 +254,7 @@ def loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False, use_
 
         ignore_mask = tf.TensorArray(dtype=float_type, size=1, dynamic_size=True)
         box_xywh = K.concatenate([box_xy, box_wh], axis=-1)
-        true_xywh = K.concatenate([raw_true_xy, raw_true_wh])
+        true_xywh = K.concatenate([raw_true_xy, raw_true_wh], axis=-1)
 
         def loop_body(b, ignore_mask):
             true_boxes = tf.boolean_mask(true_xywh[b, ...], mask=true_mask_bool[b, ..., 0])  # shape=[j, 4]
@@ -268,9 +268,7 @@ def loss(inputs, anchors, num_classes, ignore_thresh=0.5, print_loss=False, use_
         ignore_mask = ignore_mask.stack()
 
         xy_loss = true_mask * loss_scale * K.square(raw_true_xy - raw_box_xy)
-        clipped_raw_box_wh = K.clip(raw_box_wh, K.epsilon(), 100)
-        clipped_raw_true_wh = K.clip(raw_true_wh, K.epsilon(), 100)
-        wh_loss = true_mask * loss_scale * 0.5 * K.square(K.sqrt(clipped_raw_box_wh) - K.sqrt(clipped_raw_true_wh))
+        wh_loss = true_mask * loss_scale * 0.5 * K.square(raw_box_wh - raw_true_wh)
         if use_focal_loss:
             class_loss = true_mask * utils.sigmoid_focal_loss(y_true=y_true[..., 5:], y=box_classes, gama=2.0)
             confidence_loss = utils.sigmoid_focal_loss(y=box_confidence, y_true=y_true[..., 4:5],
