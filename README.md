@@ -11,8 +11,9 @@ python convert.py \
 将需要检测的图片放到`samples`目录下，然后执行以下脚本
 ```bash
 python detect.py \
-	--weights_path=log/trained_weights_stage_1.h5 \
-	--source_images_dir=samples \
+	--weights_path=/home/easygo/yolov3/YOLOv3/log/trained_weights_stage_1.h5 \
+	--source_images_dir=/home/easygo/yolov3/datasets/samples \
+	--classes_path=/home/easygo/mc/keras-yolo3-master/model_data/coco_classes.txt \
 	--output_dir=samples/detected
 ```
 
@@ -36,6 +37,7 @@ python coco_annotation.py \
 ```
 python train.py \
 	--initial_weights_path=data/yolov3.h5 \
-	--annotations_path=/home/shellhue/coco2017/train.txt \
+	--annotations_path=/home/easygo/mc/keras-yolo3-master/train.txt \
+	--classes_path=/home/easygo/mc/keras-yolo3-master/model_data/coco_classes.txt \
 	--use_focal_loss=0
 ```
