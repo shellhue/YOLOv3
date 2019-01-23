@@ -119,7 +119,7 @@ class YOLOv3(object):
                 data_generator(annotations[:num_train], input_shape, batch_size, anchors,
                                num_classes, max_boxes=self._max_boxes),
                 steps_per_epoch=max(1, num_train // batch_size),
-                epochs=50,
+                epochs=20,
                 validation_data=data_generator(annotations[num_train:], input_shape, batch_size, anchors, num_classes),
                 validation_steps=max(1, num_val // batch_size),
                 initial_epoch=0,
