@@ -11,7 +11,7 @@ python convert.py \
 将需要检测的图片放到`samples`目录下，然后执行以下脚本
 ```bash
 python detect.py \
-	--weights_path=log/ep001-loss3056.869-val_loss2639.463.h5 \
+	--weights_path=log/trained_weights_stage_1.h5 \
 	--source_images_dir=samples \
 	--output_dir=samples/detected
 ```

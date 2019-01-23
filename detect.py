@@ -7,6 +7,7 @@ from model.yolov3 import YOLOv3
 parser = argparse.ArgumentParser(description='Darknet To Keras Converter.')
 parser.add_argument('--weights_path', help='The weights used to initial model')
 parser.add_argument('--source_images_dir', help='the dir of source images')
+parser.add_argument('--classes_path', help='the dir to classes path.')
 parser.add_argument('--output_dir', help='the dir to output detecting results.')
 
 
@@ -18,6 +19,7 @@ def _main(args):
     output_dir = args.output_dir if args.output_dir.endswith('/') else args.output_dir + '/'
     source_images_dir = args.source_images_dir if args.source_images_dir.endswith('/') else args.source_images_dir + '/'
     os.makedirs(output_dir, exist_ok=True)
+    classes_path = args.classes_path if args.classes_path else 'data/coco_classes.txt'
 
     kwargs = {}
 
@@ -25,7 +27,7 @@ def _main(args):
         initial_weights_path=str(args.weights_path),
         is_training=False,
         anchors_path='data/yolo_anchors.txt',
-        classes_path='data/coco_classes.txt',
+        classes_path=classes_path,
         log_dir='log',
         **kwargs
     )
