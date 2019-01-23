@@ -139,10 +139,10 @@ class YOLOv3(object):
                 data_generator(annotations[:num_train], input_shape, batch_size, anchors,
                                num_classes, max_boxes=self._max_boxes),
                 steps_per_epoch=max(1, num_train // batch_size),
-                epochs=100,
+                epochs=10,
                 validation_data=data_generator(annotations[num_train:], input_shape, batch_size, anchors, num_classes),
                 validation_steps=max(1, num_val // batch_size),
-                initial_epoch=10,
+                initial_epoch=2,
                 callbacks=[logging, checkpoint, reduce_lr, early_stopping]
             )
             model.save_weights(self._log_dir + 'trained_weights_stage_final.h5')
