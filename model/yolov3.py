@@ -106,8 +106,7 @@ class YOLOv3(object):
         batch_size = 8
 
         def yolo_loss(label, pred):
-            print(pred)
-            return 100 * pred
+            return pred
         # first just train the three output layer
         if True:
             model.compile(
