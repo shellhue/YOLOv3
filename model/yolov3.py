@@ -76,6 +76,7 @@ class YOLOv3(object):
     def train(self, use_focal_loss=False):
         input_shape = (416, 416)
         class_names = get_classes(self._classes_path)
+        
         anchors = get_anchors(self._anchors_path)
         num_classes = len(class_names)
         model = training_model(input_shape, anchors,

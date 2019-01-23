@@ -77,11 +77,12 @@ def darknet53(x):
     return feature1, feature2, feature3
 
 
-def predict(x, num_filters, side_x=None, up_sampling=False):
+def predict(x, num_filters, num_classes, side_x=None, up_sampling=False):
     """Get the prediction from the extracted features
 
     x: tensor, extracted features
     num_filters: int, number of filters
+    num_classes: int, number of classes
     side_x: tensor, extracted features from previous scale output
     up_sampling: bool, boolean value indicating whether should up sampling side_x
     Return: tuple of tensor, (x, y), x is the extracted features from this scale, y is the output of this scale
@@ -101,23 +102,24 @@ def predict(x, num_filters, side_x=None, up_sampling=False):
     )(x)
     y = serial_apply(
         DarknetConv2D_BN_LeakyReLU(num_filters * 2, (3, 3)),
-        Conv2D(255, (1, 1), strides=1, padding='same')
+        Conv2D(3*(num_classes + 5), (1, 1), strides=1, padding='same')
     )(x)
 
     return x, y
 
 
-def base_model(image_input):
+def base_model(image_input, num_classes):
     """the yolov3 base model
 
     image_input: tensor, shape=(H, W, 3)
+    num_classes: int, number of classes
     Returns: Model, the YOLOv3 model
     """
     feature1, feature2, feature3 = darknet53(image_input)
 
-    x, y1 = predict(feature1, 512)
-    x, y2 = predict(feature2, 256, x, up_sampling=True)
-    x, y3 = predict(feature3, 128, x, up_sampling=True)
+    x, y1 = predict(feature1, 512, num_classes)
+    x, y2 = predict(feature2, 256, num_classes, x, up_sampling=True)
+    x, y3 = predict(feature3, 128, num_classes, x, up_sampling=True)
 
     return Model(image_input, [y1, y2, y3])
 
@@ -313,7 +315,7 @@ def training_model(input_shape, anchors, num_classes, weights_path,
     return: The Model for training
     """
     image_input = Input(shape=[None, None, 3])
-    model = base_model(image_input)
+    model = base_model(image_input, num_classes)
     w, h = input_shape
     scales = {0: 32, 1: 16, 2: 8}
     scales_count = len(anchors) // 3
