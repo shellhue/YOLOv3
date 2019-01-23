@@ -45,7 +45,7 @@ class YOLOv3(object):
         self._sess = K.get_session()
 
         if not self._is_training:
-            self._model = base_model(self._image_input)
+            self._model = base_model(self._image_input, len(self._class_names))
             # load model weights
             print('######### start loading weights ##########')
             self._model.load_weights(self._initial_weights_path)
