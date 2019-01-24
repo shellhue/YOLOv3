@@ -1,7 +1,7 @@
 # YOLOv3
 
 ## Introduction
-YOLOv3 is implemented with keras backed by tensorflow.
+YOLOv3 is implemented with keras backed by tensorflow. It is greatly inspired by [keras-yolo3](https://github.com/qqwweee/keras-yolo3)
 
 YOLOv3 has been tested with environment:
 
