@@ -162,7 +162,7 @@ class YOLOv3(object):
                                                })
 
         # draw boxes
-        font = ImageFont.truetype(font='font/FiraMono-Medium.otf', size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
+        font = ImageFont.truetype(font='font/FiraMono-Medium.otf', size=np.floor(2e-2 * image.size[1] + 0.5).astype('int32'))
         thickness = (image.size[0] + image.size[1]) // 400
 
         for i, c in reversed(list(enumerate(classes))):
