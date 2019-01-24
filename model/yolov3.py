@@ -117,7 +117,7 @@ class YOLOv3(object):
             model.compile(
                 Adam(lr=1e-3),
                 loss={
-                    'yolo_loss': lambda(label, pred): pred
+                    'yolo_loss': lambda label, pred: pred
                 })
             model.fit_generator(
                 data_gen,
