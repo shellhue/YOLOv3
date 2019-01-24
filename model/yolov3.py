@@ -25,6 +25,11 @@ class YOLOv3(object):
                  iou_threshold=0.5,
                  input_shape=(416, 416)):
         assert len(initial_weights_path) > 0, "Initial weights path can not be empty!"
+        assert len(annotations_path) > 0, "Annotations path can not be empty!"
+        assert len(anchors_path) > 0, "Anchors path can not be empty!"
+        assert len(classes_path) > 0, "Classes path can not be empty!"
+        assert len(log_dir) > 0, "Log path can not be empty!"
+        assert input_shape[0] % 32 == 0 and input_shape[1] % 32 == 0, "Input shape should be times of 32"
         if is_training:
             assert len(annotations_path) > 0, "Annotations path can not be empty when train!"
             self._annotations_path = annotations_path
@@ -105,21 +110,19 @@ class YOLOv3(object):
         num_val = int(len(annotations) * val_split)
         num_train = len(annotations) - num_val
         batch_size = 8
-
-        def yolo_loss(label, pred):
-            return pred
+        data_gen = data_generator(annotations[:num_train], input_shape, batch_size, anchors,
+                                  num_classes, max_boxes=self._max_boxes)
         # first just train the three output layer
         if True:
             model.compile(
                 Adam(lr=1e-3),
                 loss={
-                    'yolo_loss': yolo_loss
+                    'yolo_loss': lambda(label, pred): pred
                 })
             model.fit_generator(
-                data_generator(annotations[:num_train], input_shape, batch_size, anchors,
-                               num_classes, max_boxes=self._max_boxes),
+                data_gen,
                 steps_per_epoch=max(1, num_train // batch_size),
-                epochs=20,
+                epochs=120,
                 validation_data=data_generator(annotations[num_train:], input_shape, batch_size, anchors, num_classes),
                 validation_steps=max(1, num_val // batch_size),
                 initial_epoch=0,
@@ -128,7 +131,7 @@ class YOLOv3(object):
             model.save_weights(self._log_dir + 'trained_weights_stage_1.h5')
 
         # fine tuning all layers
-        if False:
+        if True:
             for l in range(len(model.layers)):
                 model.layers[l].trainable = True
             model.compile(
@@ -137,13 +140,12 @@ class YOLOv3(object):
                     'yolo_loss': lambda label, pred: pred
                 })
             model.fit_generator(
-                data_generator(annotations[:num_train], input_shape, batch_size, anchors,
-                               num_classes, max_boxes=self._max_boxes),
+                data_gen,
                 steps_per_epoch=max(1, num_train // batch_size),
-                epochs=10,
+                epochs=150,
                 validation_data=data_generator(annotations[num_train:], input_shape, batch_size, anchors, num_classes),
                 validation_steps=max(1, num_val // batch_size),
-                initial_epoch=2,
+                initial_epoch=120,
                 callbacks=[logging, checkpoint, reduce_lr, early_stopping]
             )
             model.save_weights(self._log_dir + 'trained_weights_stage_final.h5')
