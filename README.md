@@ -3,11 +3,11 @@
 ## Introduction
 YOLOv3 is implemented with keras backed by tensorflow.
 
-The test environment is
+YOLOv3 has been tested with environment:
 
-- Python 3.6.5
-- Keras 2.2.4
-- tensorflow 1.10
+	- Python 3.6.5
+	- Keras 2.2.4
+	- tensorflow 1.10
 
 ---
 
