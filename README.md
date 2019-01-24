@@ -9,7 +9,6 @@ YOLOv3 has been tested with environment:
 - Keras 2.2.4
 - tensorflow 1.10
 
----
 
 ## Quick Start
 1. Download YOLOv3 weights from YOLO website.
