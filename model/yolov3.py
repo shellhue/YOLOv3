@@ -25,7 +25,6 @@ class YOLOv3(object):
                  iou_threshold=0.5,
                  input_shape=(416, 416)):
         assert len(initial_weights_path) > 0, "Initial weights path can not be empty!"
-        assert len(annotations_path) > 0, "Annotations path can not be empty!"
         assert len(anchors_path) > 0, "Anchors path can not be empty!"
         assert len(classes_path) > 0, "Classes path can not be empty!"
         assert len(log_dir) > 0, "Log path can not be empty!"
